@@ -1,3 +1,10 @@
+"""
+PubMed API client for the MCP server.
+
+This module provides a comprehensive client for interacting with the NCBI PubMed API,
+including search, article retrieval, and data parsing capabilities.
+"""
+
 import asyncio
 import time
 import re
@@ -10,32 +17,22 @@ from datetime import datetime, timedelta
 import httpx
 from bs4 import BeautifulSoup
 
-# Handle both relative and absolute imports
-try:
-    from .models import (
-        Article, Author, Journal, MeSHTerm, SearchResult, MCPResponse,
-        SortOrder, DateRange, ArticleType, CitationFormat
-    )
-    from .utils import (
-        CacheManager, RateLimiter, rate_limited, format_authors, format_date,
-        truncate_text, format_mesh_terms, build_search_query, validate_pmid
-    )
-except ImportError:
-    from models import (
-        Article, Author, Journal, MeSHTerm, SearchResult, MCPResponse,
-        SortOrder, DateRange, ArticleType, CitationFormat
-    )
-    from utils import (
-        CacheManager, RateLimiter, rate_limited, format_authors, format_date,
-        truncate_text, format_mesh_terms, build_search_query, validate_pmid
-    )
+from .models import (
+    Article, Author, Journal, MeSHTerm, SearchResult, MCPResponse,
+    SortOrder, DateRange, ArticleType, CitationFormat
+)
+from .utils import (
+    CacheManager, RateLimiter, format_authors, format_date,
+    truncate_text, format_mesh_terms, build_search_query, validate_pmid
+)
 
 logger = logging.getLogger(__name__)
+
 
 class PubMedClient:
     """Comprehensive PubMed client with advanced search and citation features."""
     
-    def __init__(self, api_key: str, email: str, rate_limit: float = 3.0):
+    def __init__(self, api_key: str, email: str, rate_limit: float = 3.0) -> None:
         """
         Initialize PubMed client.
         

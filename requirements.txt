@@ -1,22 +1,40 @@
+# Core framework dependencies
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
-httpx==0.28.1
-pydantic==2.10.3
-python-dotenv==1.0.1
-cachetools==5.5.0
 mcp==1.1.0
-python-multipart==0.0.18
+
+# HTTP client and async support  
+httpx==0.28.1
 aiofiles==24.1.0
+
+# Data validation and serialization
+pydantic==2.10.3
+
+# Configuration management
+python-dotenv==1.0.1
+
+# Caching and utilities
+cachetools==5.5.0
+
+# Web parsing and XML processing
 lxml==5.1.0
 beautifulsoup4==4.12.3
+
+# Date and time utilities
 python-dateutil==2.8.2
+
+# Citation and bibliography formatting
 bibtexparser==1.4.0
+
+# Template engine
 jinja2==3.1.4
+
+# File upload support  
+python-multipart==0.0.18
 
 # Testing dependencies
 pytest==7.4.3
 pytest-asyncio==0.23.2
 pytest-mock==3.12.0
 pytest-cov==4.1.0
-responses==0.24.1
-httpx[test]==0.28.1 
+responses==0.24.1 

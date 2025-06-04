@@ -1,24 +1,18 @@
 import asyncio
 import logging
-import os
 import signal
-from typing import Optional
+from typing import Optional, List, Dict, Any
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import Tool
 
-# Handle both relative and absolute imports
-try:
-    from .pubmed_client import PubMedClient
-    from .tool_handler import ToolHandler
-    from .utils import CacheManager
-except ImportError:
-    from pubmed_client import PubMedClient
-    from tool_handler import ToolHandler
-    from utils import CacheManager
+from .pubmed_client import PubMedClient
+from .tool_handler import ToolHandler
+from .utils import CacheManager
 
 logger = logging.getLogger(__name__)
+
 
 class PubMedMCPServer:
     """Main PubMed MCP server."""
@@ -30,7 +24,7 @@ class PubMedMCPServer:
         cache_ttl: int = 300,
         cache_max_size: int = 1000,
         rate_limit: float = 3.0
-    ):
+    ) -> None:
         """
         Initialize PubMed MCP server.
         
@@ -65,13 +59,13 @@ class PubMedMCPServer:
         """Set up MCP request handlers."""
         
         @self.server.list_tools()
-        async def list_tools() -> list[Tool]:
+        async def list_tools() -> List[Tool]:
             """List available tools."""
             tools_data = self.tool_handler.get_tools()
             return [Tool(**tool) for tool in tools_data]
         
         @self.server.call_tool()
-        async def call_tool(name: str, arguments: dict) -> list[dict]:
+        async def call_tool(name: str, arguments: Dict[str, Any]) -> List[Dict[str, Any]]:
             """Handle tool calls."""
             try:
                 result = await self.tool_handler.handle_tool_call(name, arguments)
@@ -86,7 +80,7 @@ class PubMedMCPServer:
     def _setup_error_handling(self) -> None:
         """Set up error handling and signal handlers."""
         
-        def signal_handler(signum, frame):
+        def signal_handler(signum: int, frame) -> None:
             logger.info(f"Received signal {signum}, shutting down...")
             asyncio.create_task(self.shutdown())
         
@@ -132,6 +126,6 @@ class PubMedMCPServer:
         except Exception as e:
             logger.error(f"Error during shutdown: {e}")
     
-    def get_cache_stats(self) -> dict:
+    def get_cache_stats(self) -> Dict[str, Any]:
         """Get current cache statistics."""
         return self.cache.get_stats() 

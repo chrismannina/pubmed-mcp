@@ -1,3 +1,10 @@
+"""
+Tool definitions for PubMed MCP Server.
+
+This module contains the MCP tool schema definitions for all available tools
+in the PubMed server.
+"""
+
 from typing import Dict, Any, List
 
 TOOL_DEFINITIONS: List[Dict[str, Any]] = [

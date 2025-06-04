@@ -1,8 +1,16 @@
+"""
+Utility functions and classes for the PubMed MCP Server.
+
+This module contains common utilities including caching, rate limiting,
+and data formatting functions.
+"""
+
 import asyncio
 import time
 import hashlib
 import logging
-from typing import Any, Optional, Dict, Callable
+import re
+from typing import Any, Optional, Dict, Callable, List
 from functools import wraps
 from cachetools import TTLCache
 
@@ -11,7 +19,7 @@ logger = logging.getLogger(__name__)
 class CacheManager:
     """Enhanced cache manager with TTL and size limits."""
     
-    def __init__(self, max_size: int = 1000, ttl: int = 300):
+    def __init__(self, max_size: int = 1000, ttl: int = 300) -> None:
         """
         Initialize cache manager.
         
@@ -85,7 +93,7 @@ class CacheManager:
 class RateLimiter:
     """Simple rate limiter using token bucket algorithm."""
     
-    def __init__(self, rate: float = 3.0):
+    def __init__(self, rate: float = 3.0) -> None:
         """
         Initialize rate limiter.
         
@@ -124,7 +132,7 @@ def rate_limited(rate_limiter: RateLimiter):
         return wrapper
     return decorator
 
-def format_authors(authors: list) -> str:
+def format_authors(authors: List[str]) -> str:
     """Format author list for display."""
     if not authors:
         return "Unknown authors"
@@ -146,7 +154,7 @@ def format_date(date_str: Optional[str]) -> str:
         from dateutil.parser import parse
         parsed_date = parse(date_str)
         return parsed_date.strftime("%Y %b %d")
-    except:
+    except Exception:
         return date_str
 
 def truncate_text(text: str, max_length: int = 300, suffix: str = "...") -> str:
@@ -155,7 +163,7 @@ def truncate_text(text: str, max_length: int = 300, suffix: str = "...") -> str:
         return text
     return text[:max_length - len(suffix)] + suffix
 
-def format_mesh_terms(mesh_terms: list) -> str:
+def format_mesh_terms(mesh_terms: List[Dict[str, Any]]) -> str:
     """Format MeSH terms for display."""
     if not mesh_terms:
         return "No MeSH terms"
@@ -173,10 +181,10 @@ def format_mesh_terms(mesh_terms: list) -> str:
 
 def build_search_query(
     base_query: str,
-    authors: Optional[list] = None,
-    journals: Optional[list] = None,
-    mesh_terms: Optional[list] = None,
-    article_types: Optional[list] = None,
+    authors: Optional[List[str]] = None,
+    journals: Optional[List[str]] = None,
+    mesh_terms: Optional[List[str]] = None,
+    article_types: Optional[List[str]] = None,
     date_from: Optional[str] = None,
     date_to: Optional[str] = None,
     language: Optional[str] = None,
@@ -205,43 +213,42 @@ def build_search_query(
         query_parts.append(f"({' OR '.join(type_queries)})")
     
     if date_from or date_to:
+        date_query = ""
         if date_from and date_to:
-            query_parts.append(f'"{date_from}"[Date - Publication] : "{date_to}"[Date - Publication]')
+            date_query = f'("{date_from}"[Date - Publication] : "{date_to}"[Date - Publication])'
         elif date_from:
-            query_parts.append(f'"{date_from}"[Date - Publication] : 3000[Date - Publication]')
+            date_query = f'"{date_from}"[Date - Publication] : "3000"[Date - Publication]'
         elif date_to:
-            query_parts.append(f'1800[Date - Publication] : "{date_to}"[Date - Publication]')
+            date_query = f'"1800"[Date - Publication] : "{date_to}"[Date - Publication]'
+        
+        if date_query:
+            query_parts.append(date_query)
     
     if language:
         query_parts.append(f'"{language}"[Language]')
     
     if has_abstract:
-        query_parts.append('hasabstract')
+        query_parts.append("hasabstract[text word]")
     
     if has_full_text:
-        query_parts.append('free full text[sb]')
+        query_parts.append("free full text[sb]")
     
     if humans_only:
-        query_parts.append('humans[MeSH Terms]')
+        query_parts.append("humans[MeSH Terms]")
     
     return " AND ".join(query_parts)
 
-def extract_pmids_from_text(text: str) -> list:
+def extract_pmids_from_text(text: str) -> List[str]:
     """Extract PMIDs from text using regex."""
-    import re
-    
-    # Match PMID patterns
-    pmid_pattern = r'\b(?:PMID:?\s*)?(\d{8})\b'
-    matches = re.findall(pmid_pattern, text, re.IGNORECASE)
-    
-    return list(set(matches))  # Remove duplicates
+    pmid_pattern = r'\b\d{8,9}\b'  # PMIDs are typically 8-9 digits
+    pmids = re.findall(pmid_pattern, text)
+    return [pmid for pmid in pmids if validate_pmid(pmid)]
 
 def validate_pmid(pmid: str) -> bool:
     """Validate PMID format."""
-    import re
-    
-    # PMID should be 8 digits
-    return bool(re.match(r'^\d{8}$', pmid))
+    if not pmid or not pmid.isdigit():
+        return False
+    return 7 <= len(pmid) <= 9  # PMIDs are typically 7-9 digits
 
 def format_file_size(size_bytes: int) -> str:
     """Format file size in human readable format."""

@@ -1,36 +1,39 @@
+"""
+Tool handler for PubMed MCP Server.
+
+This module handles all tool requests and formats responses for the MCP protocol.
+"""
+
 import logging
 import time
 from typing import Dict, Any, List, Optional, Union
 from datetime import datetime, timedelta
 
-# Handle both relative and absolute imports
-try:
-    from .tools import TOOL_DEFINITIONS
-    from .pubmed_client import PubMedClient
-    from .citation_formatter import CitationFormatter
-    from .utils import CacheManager, format_authors, format_date, truncate_text, format_mesh_terms
-    from .models import (
-        MCPResponse, SortOrder, DateRange, ArticleType, CitationFormat,
-        PubMedSearchRequest, PMIDRequest, AuthorSearchRequest, RelatedArticlesRequest,
-        CitationRequest, MeSHSearchRequest, JournalSearchRequest, TrendingRequest
-    )
-except ImportError:
-    from tools import TOOL_DEFINITIONS
-    from pubmed_client import PubMedClient
-    from citation_formatter import CitationFormatter
-    from utils import CacheManager, format_authors, format_date, truncate_text, format_mesh_terms
-    from models import (
-        MCPResponse, SortOrder, DateRange, ArticleType, CitationFormat,
-        PubMedSearchRequest, PMIDRequest, AuthorSearchRequest, RelatedArticlesRequest,
-        CitationRequest, MeSHSearchRequest, JournalSearchRequest, TrendingRequest
-    )
+from .tools import TOOL_DEFINITIONS
+from .pubmed_client import PubMedClient
+from .citation_formatter import CitationFormatter
+from .utils import CacheManager, format_authors, format_date, truncate_text, format_mesh_terms
+from .models import (
+    MCPResponse, SortOrder, DateRange, ArticleType, CitationFormat,
+    PubMedSearchRequest, PMIDRequest, AuthorSearchRequest, RelatedArticlesRequest,
+    CitationRequest, MeSHSearchRequest, JournalSearchRequest, TrendingRequest,
+    Article
+)
 
 logger = logging.getLogger(__name__)
+
 
 class ToolHandler:
     """Handler for all PubMed MCP tool calls."""
     
-    def __init__(self, pubmed_client: PubMedClient, cache: CacheManager):
+    def __init__(self, pubmed_client: PubMedClient, cache: CacheManager) -> None:
+        """
+        Initialize tool handler.
+        
+        Args:
+            pubmed_client: PubMed API client instance
+            cache: Cache manager instance
+        """
         self.pubmed_client = pubmed_client
         self.cache = cache
         
@@ -59,30 +62,25 @@ class ToolHandler:
                     is_error=True
                 )
             
-            if name == "search_pubmed":
-                return await self._handle_search_pubmed(arguments)
-            elif name == "get_article_details":
-                return await self._handle_get_article_details(arguments)
-            elif name == "search_by_author":
-                return await self._handle_search_by_author(arguments)
-            elif name == "find_related_articles":
-                return await self._handle_find_related_articles(arguments)
-            elif name == "export_citations":
-                return await self._handle_export_citations(arguments)
-            elif name == "search_mesh_terms":
-                return await self._handle_search_mesh_terms(arguments)
-            elif name == "search_by_journal":
-                return await self._handle_search_by_journal(arguments)
-            elif name == "get_trending_topics":
-                return await self._handle_get_trending_topics(arguments)
-            elif name == "analyze_research_trends":
-                return await self._handle_analyze_research_trends(arguments)
-            elif name == "compare_articles":
-                return await self._handle_compare_articles(arguments)
-            elif name == "get_journal_metrics":
-                return await self._handle_get_journal_metrics(arguments)
-            elif name == "advanced_search":
-                return await self._handle_advanced_search(arguments)
+            # Route to appropriate handler
+            handler_map = {
+                "search_pubmed": self._handle_search_pubmed,
+                "get_article_details": self._handle_get_article_details,
+                "search_by_author": self._handle_search_by_author,
+                "find_related_articles": self._handle_find_related_articles,
+                "export_citations": self._handle_export_citations,
+                "search_mesh_terms": self._handle_search_mesh_terms,
+                "search_by_journal": self._handle_search_by_journal,
+                "get_trending_topics": self._handle_get_trending_topics,
+                "analyze_research_trends": self._handle_analyze_research_trends,
+                "compare_articles": self._handle_compare_articles,
+                "get_journal_metrics": self._handle_get_journal_metrics,
+                "advanced_search": self._handle_advanced_search,
+            }
+            
+            handler = handler_map.get(name)
+            if handler:
+                return await handler(arguments)
             else:
                 return MCPResponse(
                     content=[{

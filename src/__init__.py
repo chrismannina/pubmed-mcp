@@ -5,4 +5,13 @@ A comprehensive Model Context Protocol server for PubMed literature search and m
 """
 
 __version__ = "1.0.0"
-__author__ = "Agent Care Team" 
+__author__ = "Chris Mannina"
+
+from .server import PubMedMCPServer
+from .pubmed_client import PubMedClient
+from .models import *
+
+__all__ = [
+    "PubMedMCPServer",
+    "PubMedClient",
+] 

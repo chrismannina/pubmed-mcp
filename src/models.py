@@ -1,8 +1,17 @@
-from typing import Optional, List, Dict, Any, Union, Literal
+"""
+Pydantic models for PubMed MCP Server.
+
+This module contains all data models used for API requests, responses,
+and internal data representation.
+"""
+
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
 from enum import Enum
 
+
+# Enums
 class SortOrder(str, Enum):
     """PubMed search sort orders."""
     RELEVANCE = "relevance"
@@ -11,12 +20,14 @@ class SortOrder(str, Enum):
     JOURNAL = "journal"
     TITLE = "title"
 
+
 class DateRange(str, Enum):
     """Predefined date ranges for search."""
     LAST_YEAR = "1y"
     LAST_5_YEARS = "5y"
     LAST_10_YEARS = "10y"
     ALL_TIME = "all"
+
 
 class ArticleType(str, Enum):
     """PubMed article types."""
@@ -31,6 +42,7 @@ class ArticleType(str, Enum):
     EDITORIAL = "Editorial"
     COMMENT = "Comment"
 
+
 class CitationFormat(str, Enum):
     """Citation export formats."""
     BIBTEX = "bibtex"
@@ -41,6 +53,8 @@ class CitationFormat(str, Enum):
     CHICAGO = "chicago"
     VANCOUVER = "vancouver"
 
+
+# Request Models
 class PubMedSearchRequest(BaseModel):
     """Request model for PubMed search."""
     query: str = Field(..., description="Search query")
@@ -58,11 +72,13 @@ class PubMedSearchRequest(BaseModel):
     has_full_text: Optional[bool] = Field(None, description="Only include articles with full text")
     humans_only: Optional[bool] = Field(None, description="Only include human studies")
 
+
 class AuthorSearchRequest(BaseModel):
     """Request model for author-based search."""
     author_name: str = Field(..., description="Author name to search for")
     max_results: Optional[int] = Field(20, ge=1, le=100, description="Maximum number of results")
     include_coauthors: Optional[bool] = Field(True, description="Include co-author information")
+
 
 class PMIDRequest(BaseModel):
     """Request model for PMID-based operations."""
@@ -70,10 +86,12 @@ class PMIDRequest(BaseModel):
     include_abstracts: Optional[bool] = Field(True, description="Include abstracts in response")
     include_citations: Optional[bool] = Field(False, description="Include citation information")
 
+
 class RelatedArticlesRequest(BaseModel):
     """Request model for finding related articles."""
     pmid: str = Field(..., description="PMID of the reference article")
     max_results: Optional[int] = Field(10, ge=1, le=50, description="Maximum number of related articles")
+
 
 class CitationRequest(BaseModel):
     """Request model for citation export."""
@@ -81,10 +99,12 @@ class CitationRequest(BaseModel):
     format: CitationFormat = Field(CitationFormat.BIBTEX, description="Citation format")
     include_abstracts: Optional[bool] = Field(False, description="Include abstracts in citations")
 
+
 class MeSHSearchRequest(BaseModel):
     """Request model for MeSH term search."""
     term: str = Field(..., description="MeSH term to search for")
     max_results: Optional[int] = Field(20, ge=1, le=100, description="Maximum number of results")
+
 
 class JournalSearchRequest(BaseModel):
     """Request model for journal-based search."""
@@ -93,21 +113,25 @@ class JournalSearchRequest(BaseModel):
     date_from: Optional[str] = Field(None, description="Start date (YYYY/MM/DD)")
     date_to: Optional[str] = Field(None, description="End date (YYYY/MM/DD)")
 
+
 class TrendingRequest(BaseModel):
     """Request model for trending topics."""
     category: Optional[str] = Field(None, description="Medical category (e.g., 'cardiology', 'oncology')")
     days: Optional[int] = Field(7, ge=1, le=30, description="Number of days to look back")
 
+
+# Data Models
 class Author(BaseModel):
-    """Author information."""
+    """Author information model."""
     last_name: str
     first_name: Optional[str] = None
     initials: Optional[str] = None
     affiliation: Optional[str] = None
     orcid: Optional[str] = None
 
+
 class Journal(BaseModel):
-    """Journal information."""
+    """Journal information model."""
     title: str
     iso_abbreviation: Optional[str] = None
     issn: Optional[str] = None
@@ -115,15 +139,17 @@ class Journal(BaseModel):
     issue: Optional[str] = None
     pub_date: Optional[str] = None
 
+
 class MeSHTerm(BaseModel):
-    """MeSH term information."""
+    """MeSH term information model."""
     descriptor_name: str
     qualifier_name: Optional[str] = None
     major_topic: bool = False
     ui: Optional[str] = None
 
+
 class Article(BaseModel):
-    """Complete article information."""
+    """Complete article information model."""
     pmid: str
     title: str
     abstract: Optional[str] = None
@@ -142,8 +168,9 @@ class Article(BaseModel):
     grant_info: List[Dict[str, str]] = []
     conflict_of_interest: Optional[str] = None
 
+
 class SearchResult(BaseModel):
-    """Search result container."""
+    """Search result container model."""
     query: str
     total_results: int
     returned_results: int
@@ -151,15 +178,18 @@ class SearchResult(BaseModel):
     search_time: float
     suggestions: List[str] = []
 
-class MCPResponse(BaseModel):
-    """MCP response format."""
-    content: List[Dict[str, Any]]
-    is_error: Optional[bool] = False
-    metadata: Optional[Dict[str, Any]] = None
 
 class TrendingTopic(BaseModel):
-    """Trending topic information."""
+    """Trending topic information model."""
     topic: str
     article_count: int
     growth_rate: float
-    representative_articles: List[str]  # PMIDs 
+    representative_articles: List[str]  # PMIDs
+
+
+# Response Models
+class MCPResponse(BaseModel):
+    """MCP response format model."""
+    content: List[Dict[str, Any]]
+    is_error: Optional[bool] = False
+    metadata: Optional[Dict[str, Any]] = None 

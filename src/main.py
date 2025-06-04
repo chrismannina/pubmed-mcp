@@ -11,16 +11,11 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Dict, Any
 
 from dotenv import load_dotenv
 
-# Handle both relative and absolute imports for MCP compatibility
-try:
-    from .server import PubMedMCPServer
-except ImportError:
-    # Add the src directory to the path for direct execution
-    sys.path.insert(0, os.path.dirname(__file__))
-    from server import PubMedMCPServer
+from .server import PubMedMCPServer
 
 # Configure logging
 logging.basicConfig(
@@ -33,7 +28,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-def load_config() -> dict:
+
+def load_config() -> Dict[str, Any]:
     """Load configuration from environment variables."""
     
     # Load .env file if it exists
@@ -70,7 +66,8 @@ def load_config() -> dict:
     
     return config
 
-async def main():
+
+async def main() -> None:
     """Main entry point."""
     try:
         logger.info("Initializing PubMed MCP Server...")
@@ -100,9 +97,11 @@ async def main():
         logger.error(f"Fatal error: {e}")
         sys.exit(1)
 
-def cli_main():
+
+def cli_main() -> None:
     """CLI entry point for setuptools."""
     asyncio.run(main())
+
 
 if __name__ == "__main__":
     cli_main() 

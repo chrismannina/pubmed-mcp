@@ -1,3 +1,10 @@
+"""
+Citation formatting utilities for PubMed MCP Server.
+
+This module provides functionality to format article citations in various
+academic styles including APA, MLA, Chicago, Vancouver, BibTeX, EndNote, and RIS.
+"""
+
 import re
 from typing import List, Dict, Any
 from datetime import datetime
@@ -26,22 +33,18 @@ class CitationFormatter:
         Returns:
             Formatted citation string
         """
-        if format_type == CitationFormat.BIBTEX:
-            return CitationFormatter._format_bibtex(article, include_abstract)
-        elif format_type == CitationFormat.APA:
-            return CitationFormatter._format_apa(article, include_abstract)
-        elif format_type == CitationFormat.MLA:
-            return CitationFormatter._format_mla(article, include_abstract)
-        elif format_type == CitationFormat.CHICAGO:
-            return CitationFormatter._format_chicago(article, include_abstract)
-        elif format_type == CitationFormat.VANCOUVER:
-            return CitationFormatter._format_vancouver(article, include_abstract)
-        elif format_type == CitationFormat.ENDNOTE:
-            return CitationFormatter._format_endnote(article, include_abstract)
-        elif format_type == CitationFormat.RIS:
-            return CitationFormatter._format_ris(article, include_abstract)
-        else:
-            return CitationFormatter._format_bibtex(article, include_abstract)
+        formatter_map = {
+            CitationFormat.BIBTEX: CitationFormatter._format_bibtex,
+            CitationFormat.APA: CitationFormatter._format_apa,
+            CitationFormat.MLA: CitationFormatter._format_mla,
+            CitationFormat.CHICAGO: CitationFormatter._format_chicago,
+            CitationFormat.VANCOUVER: CitationFormatter._format_vancouver,
+            CitationFormat.ENDNOTE: CitationFormatter._format_endnote,
+            CitationFormat.RIS: CitationFormatter._format_ris,
+        }
+        
+        formatter = formatter_map.get(format_type, CitationFormatter._format_bibtex)
+        return formatter(article, include_abstract)
     
     @staticmethod
     def format_multiple_citations(
