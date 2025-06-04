@@ -3,29 +3,32 @@ Pytest configuration and fixtures for PubMed MCP Server tests.
 """
 import os
 import sys
+from typing import Any, Dict, List
+from unittest.mock import AsyncMock, Mock
+
 import pytest
-from unittest.mock import Mock, AsyncMock
-from typing import Dict, Any, List
 
 # Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
+from src.models import Article, Author, Journal, MCPResponse, SearchResult
 from src.pubmed_client import PubMedClient
 from src.server import PubMedMCPServer
 from src.tool_handler import ToolHandler
 from src.utils import CacheManager, RateLimiter
-from src.models import Article, Author, Journal, SearchResult, MCPResponse
+
 
 @pytest.fixture
 def mock_config():
     """Mock configuration for testing."""
     return {
-        'pubmed_api_key': 'test_api_key_123',
-        'pubmed_email': 'test@example.com',
-        'cache_ttl': 300,
-        'cache_max_size': 100,
-        'rate_limit': 5.0
+        "pubmed_api_key": "test_api_key_123",
+        "pubmed_email": "test@example.com",
+        "cache_ttl": 300,
+        "cache_max_size": 100,
+        "rate_limit": 5.0,
     }
+
 
 @pytest.fixture
 def mock_rate_limiter():
@@ -33,6 +36,7 @@ def mock_rate_limiter():
     limiter = Mock(spec=RateLimiter)
     limiter.acquire = AsyncMock()
     return limiter
+
 
 @pytest.fixture
 def mock_cache_manager():
@@ -47,9 +51,10 @@ def mock_cache_manager():
         "hits": 0,
         "misses": 0,
         "hit_rate": 0.0,
-        "sets": 0
+        "sets": 0,
     }
     return cache
+
 
 @pytest.fixture
 def sample_article():
@@ -60,10 +65,7 @@ def sample_article():
         abstract="This is a test abstract for the article.",
         authors=[
             Author(
-                last_name="Smith",
-                first_name="John",
-                initials="J",
-                affiliation="Test University"
+                last_name="Smith", first_name="John", initials="J", affiliation="Test University"
             )
         ],
         journal=Journal(
@@ -72,14 +74,15 @@ def sample_article():
             issn="1234-5678",
             volume="1",
             issue="1",
-            pub_date="2023/01/01"
+            pub_date="2023/01/01",
         ),
         pub_date="2023/01/01",
         doi="10.1234/test.doi",
         article_types=["Journal Article"],
         keywords=["test", "example"],
-        languages=["eng"]
+        languages=["eng"],
     )
+
 
 @pytest.fixture
 def sample_search_result(sample_article):
@@ -90,8 +93,9 @@ def sample_search_result(sample_article):
         returned_results=1,
         articles=[sample_article],
         search_time=0.5,
-        suggestions=[]
+        suggestions=[],
     )
+
 
 @pytest.fixture
 def mock_pubmed_client(mock_rate_limiter, sample_search_result):
@@ -105,14 +109,16 @@ def mock_pubmed_client(mock_rate_limiter, sample_search_result):
     client.close = AsyncMock()
     return client
 
+
 @pytest.fixture
 def mock_tool_handler(mock_pubmed_client, mock_cache_manager):
     """Mock tool handler for testing."""
     handler = ToolHandler(
         pubmed_client=mock_pubmed_client,
-        cache=mock_cache_manager  # Fixed: use 'cache' parameter as per actual constructor
+        cache=mock_cache_manager,  # Fixed: use 'cache' parameter as per actual constructor
     )
     return handler
+
 
 @pytest.fixture
 def mock_server(mock_config, mock_pubmed_client, mock_cache_manager, mock_tool_handler):
@@ -124,6 +130,7 @@ def mock_server(mock_config, mock_pubmed_client, mock_cache_manager, mock_tool_h
     server.get_cache_stats.return_value = mock_cache_manager.get_stats()
     return server
 
+
 @pytest.fixture
 def mock_httpx_response():
     """Mock httpx response for testing."""
@@ -131,10 +138,7 @@ def mock_httpx_response():
     response.status_code = 200
     response.raise_for_status = Mock()
     response.json.return_value = {
-        "esearchresult": {
-            "idlist": ["12345678", "87654321"],
-            "count": "2"
-        }
+        "esearchresult": {"idlist": ["12345678", "87654321"], "count": "2"}
     }
     response.text = """<?xml version="1.0" ?>
     <PubmedArticleSet>
@@ -168,4 +172,4 @@ def mock_httpx_response():
             </MedlineCitation>
         </PubmedArticle>
     </PubmedArticleSet>"""
-    return response 
+    return response
