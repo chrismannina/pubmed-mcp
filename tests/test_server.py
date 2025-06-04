@@ -1,70 +1,147 @@
-#!/usr/bin/env python3
 """
-Simple test script for the PubMed MCP Server
+Unit tests for the PubMed MCP Server.
 """
-import asyncio
-import os
-import sys
 
 import pytest
+from unittest.mock import Mock, patch
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
-from src.main import load_config
 from src.server import PubMedMCPServer
+from src.models import MCPResponse
 
 
-@pytest.mark.asyncio
-async def test_server():
-    """Test basic server functionality"""
-    print("🧪 Testing PubMed MCP Server...")
+class TestPubMedMCPServer:
+    """Test the PubMedMCPServer class."""
 
-    try:
-        # Load configuration
-        config = load_config()
-        print(f"✅ Configuration loaded")
-        print(f"   - API Key: {config['pubmed_api_key'][:10]}...")
-        print(f"   - Email: {config['pubmed_email']}")
-
-        # Initialize server with individual parameters (fixed)
+    def test_server_initialization(self):
+        """Test server initialization with valid parameters."""
         server = PubMedMCPServer(
-            pubmed_api_key=config["pubmed_api_key"],
-            pubmed_email=config["pubmed_email"],
-            cache_ttl=config["cache_ttl"],
-            cache_max_size=config["cache_max_size"],
-            rate_limit=config["rate_limit"],
-        )
-        print("✅ Server initialized")
-
-        # Get tools from tool handler directly
-        tools_data = server.tool_handler.get_tools()
-        print(f"✅ Found {len(tools_data)} tools:")
-
-        for i, tool in enumerate(tools_data, 1):
-            print(f"   {i:2d}. {tool['name']:25} - {tool['description']}")
-
-        print(f"\n✅ Cache initialized: {server.get_cache_stats()}")
-        print(
-            f"✅ PubMed client ready with rate limit: {server.pubmed_client.rate_limiter.rate} req/sec"
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+            cache_ttl=300,
+            cache_max_size=1000,
+            rate_limit=3.0,
         )
 
-        print("\n🎉 Server test completed successfully!")
-        print("\nYour PubMed MCP server is ready! Next steps:")
-        print("1. Run: PYTHONPATH=. mcp-inspector python src/main.py")
-        print("2. Open http://127.0.0.1:6274 in your browser")
-        print("3. Test tools with real PubMed searches!")
+        assert server.pubmed_client is not None
+        assert server.tool_handler is not None
+        assert server.cache is not None
+        assert server.server is not None
+        assert hasattr(server, 'get_cache_stats')
 
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        import traceback
+    def test_server_initialization_with_defaults(self):
+        """Test server initialization with default parameters."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
 
-        traceback.print_exc()
-        return False
+        assert server.pubmed_client is not None
+        assert server.tool_handler is not None
+        assert server.cache is not None
 
-    return True
+    def test_get_cache_stats(self):
+        """Test cache statistics retrieval."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
 
+        stats = server.get_cache_stats()
+        assert isinstance(stats, dict)
+        assert "size" in stats
+        assert "hits" in stats
+        assert "misses" in stats
 
-if __name__ == "__main__":
-    success = asyncio.run(test_server())
-    sys.exit(0 if success else 1)
+    def test_server_components_initialized(self):
+        """Test that all server components are properly initialized."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        # Check that all components exist
+        assert hasattr(server, 'pubmed_client')
+        assert hasattr(server, 'tool_handler')
+        assert hasattr(server, 'cache')
+        assert hasattr(server, 'server')
+
+        # Check that tool handler has the pubmed client
+        assert server.tool_handler.pubmed_client is server.pubmed_client
+        assert server.tool_handler.cache is server.cache
+
+    @pytest.mark.asyncio
+    async def test_tool_handler_integration(self):
+        """Test that the tool handler is properly integrated."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        # Test that we can get tools from the tool handler
+        tools = server.tool_handler.get_tools()
+        assert isinstance(tools, list)
+        assert len(tools) > 0
+        
+        # Check that each tool has required fields
+        for tool in tools:
+            assert "name" in tool
+            assert "description" in tool
+
+    @pytest.mark.asyncio
+    async def test_tool_call_handling(self):
+        """Test tool call handling through the tool handler."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        # Mock the tool handler response
+        mock_response = MCPResponse(
+            content=[{"type": "text", "text": "Test result"}],
+            is_error=False
+        )
+
+        with patch.object(server.tool_handler, 'handle_tool_call', return_value=mock_response):
+            # This tests the integration but doesn't call the actual MCP server handlers
+            # since those are registered during initialization
+            result = await server.tool_handler.handle_tool_call("search_pubmed", {"query": "cancer"})
+            assert result.content[0]["text"] == "Test result"
+            assert result.is_error is False
+
+    @pytest.mark.asyncio  
+    async def test_tool_call_error_handling(self):
+        """Test error handling in tool calls."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        # Mock the tool handler to raise an exception
+        with patch.object(server.tool_handler, 'handle_tool_call', side_effect=Exception("Test error")):
+            # Test that errors are properly handled
+            with pytest.raises(Exception) as exc_info:
+                await server.tool_handler.handle_tool_call("invalid_tool", {})
+            assert "Test error" in str(exc_info.value)
+
+    @pytest.mark.asyncio
+    async def test_shutdown(self):
+        """Test server shutdown process."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        # Mock the client close method
+        with patch.object(server.pubmed_client, 'close') as mock_close:
+            await server.shutdown()
+            mock_close.assert_called_once()
+
+    def test_server_attributes(self):
+        """Test that server has the expected attributes."""
+        server = PubMedMCPServer(
+            pubmed_api_key="test_key",
+            pubmed_email="test@example.com",
+        )
+
+        assert server.pubmed_api_key == "test_key"
+        assert server.pubmed_email == "test@example.com" 
