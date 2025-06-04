@@ -1,7 +1,7 @@
 # Core framework dependencies
 fastapi==0.115.6
 uvicorn[standard]==0.32.1
-mcp==1.1.0
+mcp>=1.9.0
 
 # HTTP client and async support  
 httpx==0.28.1
