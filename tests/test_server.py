@@ -6,6 +6,8 @@ import asyncio
 import os
 import sys
 
+import pytest
+
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
@@ -13,6 +15,7 @@ from src.main import load_config
 from src.server import PubMedMCPServer
 
 
+@pytest.mark.asyncio
 async def test_server():
     """Test basic server functionality"""
     print("🧪 Testing PubMed MCP Server...")
