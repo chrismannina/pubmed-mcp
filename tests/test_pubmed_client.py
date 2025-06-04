@@ -1,6 +1,7 @@
 """
 Unit tests for the PubMedClient class.
 """
+
 from unittest.mock import AsyncMock, Mock, patch
 from xml.etree import ElementTree as ET
 

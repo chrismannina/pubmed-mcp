@@ -140,10 +140,10 @@ async def test_new_feature(mock_client, sample_data):
     """Test description of what this test verifies."""
     # Arrange
     mock_client.some_method.return_value = sample_data
-    
+
     # Act
     result = await function_under_test()
-    
+
     # Assert
     assert result.success is True
     mock_client.some_method.assert_called_once()
@@ -192,4 +192,4 @@ python run_tests.py
 If you encounter event loop issues, ensure `pytest-asyncio` is installed and `asyncio_mode = auto` is set in `pytest.ini`.
 
 ### Mock Object Issues
-If mocks aren't working as expected, check that you're using the correct mock specifications and return values in the test fixtures. 
+If mocks aren't working as expected, check that you're using the correct mock specifications and return values in the test fixtures.

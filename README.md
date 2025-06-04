@@ -185,12 +185,12 @@ async def main():
         command="python",
         args=["-m", "src.main"]
     )
-    
+
     async with stdio_client(server_params) as (read, write):
         async with ClientSession(read, write) as session:
             # Initialize the session
             await session.initialize()
-            
+
             # Search PubMed
             result = await session.call_tool(
                 "search_pubmed",
@@ -200,7 +200,7 @@ async def main():
                     "date_range": "1y"
                 }
             )
-            
+
             print(result.content[0].text)
 
 if __name__ == "__main__":
@@ -354,4 +354,4 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes.
 
 ---
 
-**Note**: This server requires a valid NCBI API key and follows NCBI's usage guidelines. Please be respectful of API rate limits and terms of service. 
+**Note**: This server requires a valid NCBI API key and follows NCBI's usage guidelines. Please be respectful of API rate limits and terms of service.

@@ -1,6 +1,7 @@
 """
 Unit tests for the utils module.
 """
+
 import asyncio
 import time
 from unittest.mock import Mock, patch

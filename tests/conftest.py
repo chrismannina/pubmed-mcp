@@ -1,6 +1,7 @@
 """
 Pytest configuration and fixtures for PubMed MCP Server tests.
 """
+
 import os
 import sys
 from typing import Any, Dict, List

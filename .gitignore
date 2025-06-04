@@ -201,4 +201,4 @@ credentials.json
 service-account.json
 
 # MCP specific
-mcp_server.log 
+mcp_server.log

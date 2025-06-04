@@ -2,13 +2,13 @@
 Setup configuration for PubMed MCP Server.
 """
 
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 # Read the requirements from requirements.txt
 with open("requirements.txt", "r", encoding="utf-8") as f:
     requirements = [
-        line.strip() 
-        for line in f 
+        line.strip()
+        for line in f
         if line.strip() and not line.startswith("#") and "pytest" not in line
     ]
 
@@ -35,7 +35,7 @@ setup(
     classifiers=[
         "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
-        "Intended Audience :: Healthcare Industry", 
+        "Intended Audience :: Healthcare Industry",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: MIT License",
         "Programming Language :: Python :: 3",
@@ -52,4 +52,4 @@ setup(
         "Source": "https://github.com/your-org/pubmed-mcp",
         "Documentation": "https://github.com/your-org/pubmed-mcp#readme",
     },
-) 
+)

@@ -75,4 +75,4 @@ docker-build:
 	docker build -t pubmed-mcp .
 
 docker-run:
-	docker run -it --rm -e PUBMED_API_KEY=$(PUBMED_API_KEY) -e PUBMED_EMAIL=$(PUBMED_EMAIL) pubmed-mcp 
+	docker run -it --rm -e PUBMED_API_KEY=$(PUBMED_API_KEY) -e PUBMED_EMAIL=$(PUBMED_EMAIL) pubmed-mcp

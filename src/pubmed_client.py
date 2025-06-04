@@ -463,9 +463,9 @@ class PubMedClient:
                     if last_name_elem is not None:
                         author = Author(
                             last_name=last_name_elem.text,
-                            first_name=first_name_elem.text
-                            if first_name_elem is not None
-                            else None,
+                            first_name=(
+                                first_name_elem.text if first_name_elem is not None else None
+                            ),
                             initials=initials_elem.text if initials_elem is not None else None,
                             affiliation=affiliation,
                         )

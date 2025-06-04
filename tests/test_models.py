@@ -1,6 +1,7 @@
 """
 Unit tests for the data models.
 """
+
 from datetime import datetime
 
 import pytest
@@ -134,7 +135,7 @@ class TestArticle:
             Article(
                 title="Test",
                 authors=[],
-                journal=Journal(title="Test")
+                journal=Journal(title="Test"),
                 # Missing pmid
             )
 
@@ -143,7 +144,7 @@ class TestArticle:
             Article(
                 pmid="12345678",
                 authors=[],
-                journal=Journal(title="Test")
+                journal=Journal(title="Test"),
                 # Missing title
             )
 
