@@ -251,17 +251,17 @@ class TestHelperFunctions:
     def test_validate_pmid(self):
         """Test PMID validation function."""
         # Valid PMIDs (7-9 digits)
-        assert validate_pmid("1234567") is True   # 7 digits - valid
-        assert validate_pmid("12345678") is True  # 8 digits - valid  
-        assert validate_pmid("123456789") is True # 9 digits - valid
+        assert validate_pmid("1234567") is True  # 7 digits - valid
+        assert validate_pmid("12345678") is True  # 8 digits - valid
+        assert validate_pmid("123456789") is True  # 9 digits - valid
         assert validate_pmid("00000001") is True  # 8 digits with leading zeros - valid
 
         # Invalid PMIDs
-        assert validate_pmid("123456") is False   # Too short (6 digits)
+        assert validate_pmid("123456") is False  # Too short (6 digits)
         assert validate_pmid("1234567890") is False  # Too long (10 digits)
-        assert validate_pmid("1234567a") is False # Contains letter
-        assert validate_pmid("") is False # Empty
-        assert validate_pmid("abcdefgh") is False # All letters
+        assert validate_pmid("1234567a") is False  # Contains letter
+        assert validate_pmid("") is False  # Empty
+        assert validate_pmid("abcdefgh") is False  # All letters
 
     def test_extract_pmids_from_text(self):
         """Test PMID extraction from text."""
