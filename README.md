@@ -1,5 +1,7 @@
 # PubMed MCP Server
 
+[![CI](https://github.com/chrismannina/pubmed-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/chrismannina/pubmed-mcp/actions/workflows/ci.yml)
+
 A comprehensive Model Context Protocol (MCP) server for PubMed literature search and management. This server provides advanced search capabilities, citation formatting, and research analysis tools through the MCP protocol.
 
 ## Features
