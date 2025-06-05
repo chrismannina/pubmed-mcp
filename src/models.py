@@ -1,13 +1,12 @@
 """
-Pydantic models for PubMed MCP Server.
+Pydantic models for PubMed MCP server.
 
-This module contains all data models used for API requests, responses,
-and internal data representation.
+This module contains all the data models used throughout the application,
+including request models, response models, and data structure definitions.
 """
 
-from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 

@@ -1,44 +1,29 @@
 """
-PubMed API client for the MCP server.
+PubMed API client for fetching literature data.
 
-This module provides a comprehensive client for interacting with the NCBI PubMed API,
-including search, article retrieval, and data parsing capabilities.
+This module provides a comprehensive client for interacting with the PubMed API,
+including search functionality, article retrieval, and data parsing.
 """
 
-import asyncio
 import logging
-import re
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
-from urllib.parse import quote, urlencode
+from typing import Any, Dict, List, Optional
 from xml.etree import ElementTree as ET
 
 import httpx
-from bs4 import BeautifulSoup
 
 from .models import (
     Article,
     ArticleType,
     Author,
-    CitationFormat,
     DateRange,
     Journal,
-    MCPResponse,
     MeSHTerm,
     SearchResult,
     SortOrder,
 )
-from .utils import (
-    CacheManager,
-    RateLimiter,
-    build_search_query,
-    format_authors,
-    format_date,
-    format_mesh_terms,
-    truncate_text,
-    validate_pmid,
-)
+from .utils import CacheManager, RateLimiter, build_search_query, validate_pmid
 
 logger = logging.getLogger(__name__)
 

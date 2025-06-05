@@ -49,4 +49,4 @@ The integration tests expect these environment variables:
 - `PUBMED_EMAIL` - Your email address (required by NCBI)
 - `CACHE_TTL` - Cache timeout in seconds (optional, default: 300)
 - `CACHE_MAX_SIZE` - Maximum cache size (optional, default: 1000)
-- `RATE_LIMIT` - Rate limit in requests per second (optional, default: 3.0) 
+- `RATE_LIMIT` - Rate limit in requests per second (optional, default: 3.0)

@@ -180,7 +180,7 @@ This roadmap outlines the path to making this PubMed MCP server a **world-class,
 
 ## 📋 **Current Status Checklist**
 
-### ✅ **Completed** 
+### ✅ **Completed**
 - [x] Basic MCP server implementation
 - [x] Comprehensive tool set (13 tools)
 - [x] Docker containerization
@@ -222,4 +222,4 @@ This roadmap outlines the path to making this PubMed MCP server a **world-class,
 
 **Estimated time to production-ready**: **4-6 weeks** following this roadmap.
 
-This will result in a **best-in-class PubMed MCP server** that researchers and developers will love! 🌟 
+This will result in a **best-in-class PubMed MCP server** that researchers and developers will love! 🌟

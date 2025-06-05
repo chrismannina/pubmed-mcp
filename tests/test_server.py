@@ -2,11 +2,12 @@
 Unit tests for the PubMed MCP Server.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
-from src.server import PubMedMCPServer
+import pytest
+
 from src.models import MCPResponse
+from src.server import PubMedMCPServer
 
 
 class TestPubMedMCPServer:

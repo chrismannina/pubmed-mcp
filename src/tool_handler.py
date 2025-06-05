@@ -1,31 +1,15 @@
 """
-Tool handler for PubMed MCP Server.
+Tool handler for PubMed MCP server.
 
 This module handles all tool requests and formats responses for the MCP protocol.
 """
 
 import logging
-import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
 from .citation_formatter import CitationFormatter
-from .models import (
-    Article,
-    ArticleType,
-    AuthorSearchRequest,
-    CitationFormat,
-    CitationRequest,
-    DateRange,
-    JournalSearchRequest,
-    MCPResponse,
-    MeSHSearchRequest,
-    PMIDRequest,
-    PubMedSearchRequest,
-    RelatedArticlesRequest,
-    SortOrder,
-    TrendingRequest,
-)
+from .models import Article, ArticleType, CitationFormat, DateRange, MCPResponse, SortOrder
 from .pubmed_client import PubMedClient
 from .tools import TOOL_DEFINITIONS
 from .utils import CacheManager, format_authors, format_date, format_mesh_terms, truncate_text
@@ -448,7 +432,10 @@ class ToolHandler:
             if category:
                 query = f'{category} AND ("trending" OR "emerging" OR "new" OR "novel")'
             else:
-                query = '("trending" OR "emerging" OR "breakthrough" OR "novel") AND (medicine OR medical)'
+                query = (
+                    '("trending" OR "emerging" OR "breakthrough" OR "novel") '
+                    "AND (medicine OR medical)"
+                )
 
             search_result = await self.pubmed_client.search_articles(
                 query=query,
@@ -463,8 +450,11 @@ class ToolHandler:
             content.append(
                 {
                     "type": "text",
-                    "text": f"**Trending Topics in {category or 'Medicine'} (Last {days} days)**\n\n"
-                    f"Found: {search_result.returned_results} recent articles\n",
+                    "text": (
+                        f"**Trending Topics in {category or 'Medicine'} "
+                        f"(Last {days} days)**\n\n"
+                        f"Found: {search_result.returned_results} recent articles\n"
+                    ),
                 }
             )
 
@@ -511,7 +501,8 @@ class ToolHandler:
                 )
 
             years_back = arguments.get("years_back", 5)
-            include_subtopics = arguments.get("include_subtopics", False)
+            # include_subtopics parameter is available but not currently used
+            # include_subtopics = arguments.get("include_subtopics", False)
 
             # Analyze trends year by year
             current_year = datetime.now().year
@@ -705,7 +696,7 @@ class ToolHandler:
 
             # Show recent notable articles
             if include_recent_articles and search_result.articles:
-                content.append({"type": "text", "text": f"\n**Recent Articles:**\n"})
+                content.append({"type": "text", "text": "\n**Recent Articles:**\n"})
 
                 for i, article_data in enumerate(search_result.articles[:5], 1):
                     article_text = self._format_article_summary(article_data, i)
@@ -834,7 +825,9 @@ class ToolHandler:
             author_names = []
             for author in authors[:3]:  # Show first 3 authors
                 if isinstance(author, dict):
-                    name = f"{author.get('first_name', author.get('initials', ''))} {author.get('last_name', '')}"
+                    first_name = author.get("first_name", author.get("initials", ""))
+                    last_name = author.get("last_name", "")
+                    name = f"{first_name} {last_name}"
                 else:
                     # Handle Author object
                     first_name = getattr(author, "first_name", None) or getattr(

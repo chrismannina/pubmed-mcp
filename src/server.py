@@ -1,7 +1,14 @@
+"""
+MCP server for PubMed literature search and management.
+
+This module implements the Model Context Protocol server that handles
+communication with MCP clients and delegates requests to appropriate handlers.
+"""
+
 import asyncio
 import logging
 import signal
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
@@ -83,9 +90,11 @@ class PubMedMCPServer:
         """Run the MCP server."""
         try:
             logger.info("Starting PubMed MCP server...")
-            logger.info(
-                f"Cache configuration: TTL={self.cache.cache.ttl}s, Max Size={self.cache.cache.maxsize}"
+            cache_config = (
+                f"Cache configuration: TTL={self.cache.cache.ttl}s, "
+                f"Max Size={self.cache.cache.maxsize}"
             )
+            logger.info(cache_config)
 
             async with stdio_server() as (read_stream, write_stream):
                 await self.server.run(

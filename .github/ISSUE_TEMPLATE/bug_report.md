@@ -43,4 +43,4 @@ If applicable, add screenshots or error logs to help explain your problem.
 Add any other context about the problem here.
 
 **Possible Solution** (optional)
-If you have ideas about what might be causing the issue or how to fix it, please share them here. 
+If you have ideas about what might be causing the issue or how to fix it, please share them here.
