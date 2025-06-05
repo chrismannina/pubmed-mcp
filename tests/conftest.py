@@ -2,21 +2,21 @@
 Pytest configuration and fixtures for PubMed MCP Server tests.
 """
 
-import os
 import sys
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, Mock
+from pathlib import Path
 
-import pytest
+# Add src directory to path
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-# Add src to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+from unittest.mock import AsyncMock, Mock  # noqa: E402
 
-from src.models import Article, Author, Journal, MCPResponse, SearchResult
-from src.pubmed_client import PubMedClient
-from src.server import PubMedMCPServer
-from src.tool_handler import ToolHandler
-from src.utils import CacheManager, RateLimiter
+import pytest  # noqa: E402
+
+from src.models import Article, Author, Journal, SearchResult  # noqa: E402
+from src.pubmed_client import PubMedClient  # noqa: E402
+from src.server import PubMedMCPServer  # noqa: E402
+from src.tool_handler import ToolHandler  # noqa: E402
+from src.utils import CacheManager, RateLimiter  # noqa: E402
 
 
 @pytest.fixture

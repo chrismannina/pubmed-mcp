@@ -6,13 +6,13 @@ import asyncio
 import os
 import sys
 
-import pytest
-
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
 
-from src.main import load_config
-from src.server import PubMedMCPServer
+import pytest  # noqa: E402
+
+from src.main import load_config  # noqa: E402
+from src.server import PubMedMCPServer  # noqa: E402
 
 
 @pytest.mark.asyncio
@@ -23,7 +23,7 @@ async def test_server():
     try:
         # Load configuration
         config = load_config()
-        print(f"✅ Configuration loaded")
+        print("✅ Configuration loaded")
         print(f"   - API Key: {config['pubmed_api_key'][:10]}...")
         print(f"   - Email: {config['pubmed_email']}")
 
@@ -45,9 +45,8 @@ async def test_server():
             print(f"   {i:2d}. {tool['name']:25} - {tool['description']}")
 
         print(f"\n✅ Cache initialized: {server.get_cache_stats()}")
-        print(
-            f"✅ PubMed client ready with rate limit: {server.pubmed_client.rate_limiter.rate} req/sec"
-        )
+        rate_limit = server.pubmed_client.rate_limiter.rate
+        print(f"✅ PubMed client ready with rate limit: {rate_limit} req/sec")
 
         print("\n🎉 Server test completed successfully!")
         print("\nYour PubMed MCP server is ready! Next steps:")

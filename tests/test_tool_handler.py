@@ -1,8 +1,6 @@
 """
-Unit tests for the ToolHandler class.
+Test cases for the tool handler module.
 """
-
-from unittest.mock import AsyncMock, Mock
 
 import pytest
 

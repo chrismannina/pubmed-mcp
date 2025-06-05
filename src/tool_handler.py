@@ -52,7 +52,12 @@ class ToolHandler:
             # Handle None arguments
             if arguments is None:
                 return MCPResponse(
-                    content=[{"type": "text", "text": "Error: Arguments cannot be None"}],
+                    content=[
+                        {
+                            "type": "text",
+                            "text": "Error: Arguments cannot be None",
+                        }
+                    ],
                     is_error=True,
                 )
 
@@ -77,7 +82,8 @@ class ToolHandler:
                 return await handler(arguments)
             else:
                 return MCPResponse(
-                    content=[{"type": "text", "text": f"Unknown tool: {name}"}], is_error=True
+                    content=[{"type": "text", "text": f"Unknown tool: {name}"}],
+                    is_error=True,
                 )
 
         except Exception as e:
@@ -298,7 +304,6 @@ class ToolHandler:
                 )
 
             format_type = CitationFormat(arguments.get("format", "bibtex"))
-            include_abstracts = arguments.get("include_abstracts", False)
 
             # Get article details
             articles = await self.pubmed_client.get_article_details(
@@ -315,7 +320,7 @@ class ToolHandler:
 
             # Format citations
             citations = CitationFormatter.format_multiple_citations(
-                articles=articles, format_type=format_type, include_abstracts=include_abstracts
+                articles=articles, format_type=format_type
             )
 
             content = []
@@ -461,7 +466,13 @@ class ToolHandler:
             # Group by topics/keywords
             topics = {}
             for article_data in search_result.articles:
-                for keyword in article_data.get("keywords", [])[:3]:  # Top 3 keywords
+                # Handle Article objects - access keywords attribute directly
+                keywords = (
+                    getattr(article_data, "keywords", [])
+                    if hasattr(article_data, "keywords")
+                    else []
+                )
+                for keyword in keywords[:3]:  # Top 3 keywords
                     if keyword not in topics:
                         topics[keyword] = []
                     topics[keyword].append(article_data)
@@ -470,16 +481,14 @@ class ToolHandler:
             sorted_topics = sorted(topics.items(), key=lambda x: len(x[1]), reverse=True)[:5]
 
             for topic, articles in sorted_topics:
+                articles_list = "\n".join(
+                    [f"• {article.title} (PMID: {article.pmid})" for article in articles[:3]]
+                )
+
                 content.append(
                     {
                         "type": "text",
-                        "text": f"\n**{topic}** ({len(articles)} articles)\n"
-                        + "\n".join(
-                            [
-                                f"• {article['title']} (PMID: {article['pmid']})"
-                                for article in articles[:3]
-                            ]
-                        ),
+                        "text": f"\n**{topic}** ({len(articles)} articles)\n{articles_list}",
                     }
                 )
 
@@ -681,7 +690,13 @@ class ToolHandler:
             if search_result.articles:
                 article_types = {}
                 for article_data in search_result.articles:
-                    for article_type in article_data.get("article_types", []):
+                    # Handle Article objects - access article_types attribute directly
+                    types = (
+                        getattr(article_data, "article_types", [])
+                        if hasattr(article_data, "article_types")
+                        else []
+                    )
+                    for article_type in types:
                         article_types[article_type] = article_types.get(article_type, 0) + 1
 
                 if article_types:

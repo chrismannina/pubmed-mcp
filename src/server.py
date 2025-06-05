@@ -74,7 +74,12 @@ class PubMedMCPServer:
                 return result.content
             except Exception as e:
                 logger.error(f"Error in tool call {name}: {e}")
-                return [{"type": "text", "text": f"Error executing tool {name}: {str(e)}"}]
+                return [
+                    {
+                        "type": "text",
+                        "text": f"Error executing tool {name}: {str(e)}",
+                    }
+                ]
 
     def _setup_error_handling(self) -> None:
         """Set up error handling and signal handlers."""
@@ -98,7 +103,9 @@ class PubMedMCPServer:
 
             async with stdio_server() as (read_stream, write_stream):
                 await self.server.run(
-                    read_stream, write_stream, self.server.create_initialization_options()
+                    read_stream,
+                    write_stream,
+                    self.server.create_initialization_options(),
                 )
 
         except Exception as e:

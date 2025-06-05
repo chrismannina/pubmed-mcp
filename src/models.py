@@ -5,10 +5,11 @@ This module contains all the data models used throughout the application,
 including request models, response models, and data structure definitions.
 """
 
+from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # Enums
@@ -79,6 +80,26 @@ class PubMedSearchRequest(BaseModel):
     has_full_text: Optional[bool] = Field(None, description="Only include articles with full text")
     humans_only: Optional[bool] = Field(None, description="Only include human studies")
 
+    def __post_init__(self):
+        """
+        Validate and normalize search criteria after initialization.
+        """
+        # Validate date range if specified
+        if self.date_from and self.date_to:
+            try:
+                from_date = datetime.strptime(self.date_from, "%Y/%m/%d")
+                to_date = datetime.strptime(self.date_to, "%Y/%m/%d")
+                if from_date > to_date:
+                    raise ValueError("date_from cannot be later than date_to")
+            except ValueError as e:
+                if "does not match format" in str(e):
+                    raise ValueError("Date format should be YYYY/MM/DD")
+                raise
+
+        # Validate max_results
+        if self.max_results and (self.max_results < 1 or self.max_results > 200):
+            raise ValueError("max_results must be between 1 and 200")
+
 
 class AuthorSearchRequest(BaseModel):
     """Request model for author-based search."""
@@ -86,6 +107,14 @@ class AuthorSearchRequest(BaseModel):
     author_name: str = Field(..., description="Author name to search for")
     max_results: Optional[int] = Field(20, ge=1, le=100, description="Maximum number of results")
     include_coauthors: Optional[bool] = Field(True, description="Include co-author information")
+
+    def __post_init__(self):
+        """Validate and normalize data after initialization."""
+        if self.include_coauthors is None:
+            self.include_coauthors = True
+
+        if self.max_results < 1 or self.max_results > 100:
+            raise ValueError("max_results must be between 1 and 100")
 
 
 class PMIDRequest(BaseModel):
@@ -95,6 +124,13 @@ class PMIDRequest(BaseModel):
     include_abstracts: Optional[bool] = Field(True, description="Include abstracts in response")
     include_citations: Optional[bool] = Field(False, description="Include citation information")
 
+    def __post_init__(self):
+        """Validate PMID list."""
+        if not self.pmids:
+            raise ValueError("At least one PMID is required")
+        if len(self.pmids) < 2 or len(self.pmids) > 5:
+            raise ValueError("Between 2 and 5 PMIDs are required for comparison")
+
 
 class RelatedArticlesRequest(BaseModel):
     """Request model for finding related articles."""
@@ -103,6 +139,11 @@ class RelatedArticlesRequest(BaseModel):
     max_results: Optional[int] = Field(
         10, ge=1, le=50, description="Maximum number of related articles"
     )
+
+    def __post_init__(self):
+        """Validate and normalize data after initialization."""
+        if self.max_results < 1 or self.max_results > 50:
+            raise ValueError("max_results must be between 1 and 50")
 
 
 class CitationRequest(BaseModel):
@@ -201,6 +242,20 @@ class SearchResult(BaseModel):
     search_time: float
     suggestions: List[str] = []
 
+    def validate_max_results(cls, v: int | None) -> int | None:
+        """Validate max_results parameter."""
+        if v is not None and (v > 10000 or v < 1):
+            raise ValueError("max_results must be between 1 and 10000")
+        return v
+
+    @field_validator("returned_results")
+    @classmethod
+    def validate_returned_results(cls, v: int | None) -> int | None:
+        """Validate returned_results parameter."""
+        if v is not None and (v > 10000 or v < 0):
+            raise ValueError("returned_results must be between 0 and 10000")
+        return v
+
 
 class TrendingTopic(BaseModel):
     """Trending topic information model."""
@@ -218,3 +273,9 @@ class MCPResponse(BaseModel):
     content: List[Dict[str, Any]]
     is_error: Optional[bool] = False
     metadata: Optional[Dict[str, Any]] = None
+
+    def validate_pmids(cls, v: list[str] | None) -> list[str] | None:
+        """Validate PMIDs parameter."""
+        if v is not None and (len(v) > 200 or len(v) < 1):
+            raise ValueError("pmids list must contain between 1 and 200 PMIDs")
+        return v

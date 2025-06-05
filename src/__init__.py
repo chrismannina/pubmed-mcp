@@ -1,7 +1,8 @@
 """
 PubMed MCP Server Package.
 
-A comprehensive Model Context Protocol (MCP) server for PubMed literature search and management.
+A comprehensive Model Context Protocol (MCP) server for PubMed literature
+search and management.
 """
 
 from .models import (

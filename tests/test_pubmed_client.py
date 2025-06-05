@@ -1,16 +1,16 @@
 """
-Unit tests for the PubMedClient class.
+Test cases for the PubMed client module.
 """
 
-from unittest.mock import AsyncMock, Mock, patch
-from xml.etree import ElementTree as ET
+import xml.etree.ElementTree as ET
+from unittest.mock import AsyncMock, Mock
 
 import httpx
 import pytest
 
-from src.models import Article, DateRange, SearchResult, SortOrder
+from src.models import Article, DateRange, SearchResult
 from src.pubmed_client import PubMedClient
-from src.utils import CacheManager, RateLimiter
+from src.utils import RateLimiter
 
 
 class TestPubMedClient:
@@ -393,7 +393,8 @@ class TestPubMedClientIntegration:
                     <Article>
                         <ArticleTitle>AI in Healthcare</ArticleTitle>
                         <Abstract>
-                            <AbstractText>This study explores AI applications in healthcare.</AbstractText>
+                            <AbstractText>This study explores AI applications in healthcare.
+                            </AbstractText>
                         </Abstract>
                         <Journal>
                             <Title>Nature Medicine</Title>

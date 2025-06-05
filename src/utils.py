@@ -13,7 +13,9 @@ import time
 from functools import wraps
 from typing import Any, Callable, Dict, List, Optional
 
-from cachetools import TTLCache
+# Type: ignore for cachetools since types-cachetools isn't available
+from cachetools import TTLCache  # type: ignore
+from dateutil import parser  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -57,9 +59,9 @@ class CacheManager:
         except Exception as e:
             logger.error(f"Error setting cache: {e}")
 
-    def generate_key(self, prefix: str, **kwargs) -> str:
+    def generate_key(self, *args: Any, **kwargs: Any) -> str:
         """Generate a cache key from prefix and parameters."""
-        key_parts = [prefix]
+        key_parts = [str(arg) for arg in args]
         for k, v in sorted(kwargs.items()):
             if v is not None:
                 if isinstance(v, (list, dict)):
@@ -70,7 +72,7 @@ class CacheManager:
         key_string = ":".join(key_parts)
         # Use hash for very long keys to avoid key length issues
         if len(key_string) > 200:
-            return f"{prefix}:{hashlib.md5(key_string.encode()).hexdigest()}"
+            return f"{key_string}:{hashlib.md5(key_string.encode()).hexdigest()}"
         return key_string
 
     def clear(self) -> None:
@@ -126,13 +128,13 @@ class RateLimiter:
             self.tokens = 0
 
 
-def rate_limited(rate_limiter: RateLimiter):
-    """Decorator to apply rate limiting to async functions."""
+def rate_limited(limiter: "RateLimiter") -> Callable[[Callable], Callable]:
+    """Decorator to apply rate limiting to a function."""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            await rate_limiter.acquire()
+            await limiter.acquire()
             return await func(*args, **kwargs)
 
         return wrapper
@@ -160,9 +162,7 @@ def format_date(date_str: Optional[str]) -> str:
 
     # Handle various date formats from PubMed
     try:
-        from dateutil.parser import parse
-
-        parsed_date = parse(date_str)
+        parsed_date = parser.parse(date_str)
         return parsed_date.strftime("%Y %b %d")
     except Exception:
         return date_str
@@ -180,18 +180,28 @@ def format_mesh_terms(mesh_terms: List[Dict[str, Any]]) -> str:
     if not mesh_terms:
         return "No MeSH terms"
 
-    major_terms = [term for term in mesh_terms if term.get("major_topic", False)]
-    other_terms = [term for term in mesh_terms if not term.get("major_topic", False)]
+    major_terms = []
+    other_terms = []
+
+    for term in mesh_terms:
+        # Handle both dict and MeSHTerm object formats
+        if hasattr(term, "major_topic"):  # MeSHTerm object
+            is_major = getattr(term, "major_topic", False)
+            descriptor = getattr(term, "descriptor_name", "")
+        else:  # Dictionary format
+            is_major = term.get("major_topic", False)
+            descriptor = term.get("descriptor_name", "")
+
+        if is_major:
+            major_terms.append(descriptor)
+        else:
+            other_terms.append(descriptor)
 
     formatted = []
     if major_terms:
-        formatted.append(
-            "Major: " + ", ".join([term.get("descriptor_name", "") for term in major_terms[:3]])
-        )
+        formatted.append("Major: " + ", ".join(major_terms[:3]))
     if other_terms:
-        formatted.append(
-            "Other: " + ", ".join([term.get("descriptor_name", "") for term in other_terms[:5]])
-        )
+        formatted.append("Other: " + ", ".join(other_terms[:5]))
 
     return "; ".join(formatted)
 

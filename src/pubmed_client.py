@@ -52,13 +52,17 @@ class PubMedClient:
 
     def _build_params(self, **kwargs) -> Dict[str, str]:
         """Build common API parameters."""
-        params = {"api_key": self.api_key, "email": self.email, "tool": "pubmed-mcp-server"}
+        params = {
+            "api_key": self.api_key,
+            "email": self.email,
+            "tool": "pubmed-mcp-server",
+        }
         params.update({k: v for k, v in kwargs.items() if v is not None})
         return params
 
     async def _make_request(self, endpoint: str, params: Dict[str, Any]) -> httpx.Response:
         """Make rate-limited API request."""
-        await self.rate_limiter.acquire()  # Apply rate limiting directly
+        await self.rate_limiter.acquire()
         url = f"{self.base_url}/{endpoint}"
         response = await self.client.get(url, params=params)
         response.raise_for_status()
@@ -151,7 +155,7 @@ class PubMedClient:
             authors=authors,
             journals=journals,
             mesh_terms=mesh_terms,
-            article_types=[at.value for at in article_types] if article_types else None,
+            article_types=([at.value for at in article_types] if article_types else None),
             date_from=date_from,
             date_to=date_to,
             language=language,
@@ -240,7 +244,9 @@ class PubMedClient:
                 return [Article(**article) for article in cached_result]
 
         articles = await self._fetch_article_details(
-            valid_pmids, include_full_details=True, include_citations=include_citations
+            valid_pmids,
+            include_full_details=True,
+            include_citations=include_citations,
         )
 
         # Cache the result
@@ -331,7 +337,11 @@ class PubMedClient:
 
         # Use elink to find related articles
         link_params = self._build_params(
-            dbfrom="pubmed", db="pubmed", id=pmid, retmode="json", linkname="pubmed_pubmed"
+            dbfrom="pubmed",
+            db="pubmed",
+            id=pmid,
+            linkname="pubmed_pubmed",
+            retmode="json",
         )
 
         link_response = await self._make_request("elink.fcgi", link_params)
@@ -371,7 +381,12 @@ class PubMedClient:
         if not pmids:
             return []
 
-        fetch_params = self._build_params(db="pubmed", id=",".join(pmids), retmode="xml")
+        fetch_params = self._build_params(
+            db="pubmed",
+            id=",".join(pmids),
+            retmode="xml",
+            rettype="abstract" if include_full_details else "docsum",
+        )
 
         fetch_response = await self._make_request("efetch.fcgi", fetch_params)
         xml_content = fetch_response.text
@@ -451,7 +466,7 @@ class PubMedClient:
                             first_name=(
                                 first_name_elem.text if first_name_elem is not None else None
                             ),
-                            initials=initials_elem.text if initials_elem is not None else None,
+                            initials=(initials_elem.text if initials_elem is not None else None),
                             affiliation=affiliation,
                         )
                         authors.append(author)
@@ -544,7 +559,7 @@ class PubMedClient:
                     if descriptor_elem is not None:
                         mesh_term = MeSHTerm(
                             descriptor_name=descriptor_elem.text,
-                            major_topic=descriptor_elem.get("MajorTopicYN", "N") == "Y",
+                            major_topic=(descriptor_elem.get("MajorTopicYN", "N") == "Y"),
                             ui=descriptor_elem.get("UI"),
                         )
                         mesh_terms.append(mesh_term)
@@ -591,4 +606,55 @@ class PubMedClient:
 
     async def close(self):
         """Close the HTTP client."""
-        await self.client.aclose()
+        try:
+            await self.client.aclose()
+        except Exception as e:
+            logger.warning(f"Error closing HTTP client: {e}")
+            # Don't re-raise the exception, just log it
+
+    async def search_pubmed(self, query: str, max_results: int = 20, **kwargs) -> SearchResult:
+        """
+        Search PubMed with the given query and parameters.
+        """
+        try:
+            logger.info(f"Searching PubMed with query: {query}, " f"max_results: {max_results}")
+
+            search_params = {
+                "db": "pubmed",
+                "term": query,
+                "retmax": min(max_results, 200),
+                "retmode": "json",
+                "sort": kwargs.get("sort_order", "relevance"),
+            }
+
+            search_response = await self._make_request("esearch.fcgi", search_params)
+            search_data = search_response.json()
+
+            search_result = search_data.get("esearchresult", {})
+            id_list = search_result.get("idlist", [])
+            search_count = int(search_result.get("count", 0))
+
+            articles = []
+            if id_list:
+                articles = await self._fetch_article_details(id_list, include_full_details=True)
+
+            logger.info(f"Retrieved {len(articles)} articles for query: {query}")
+            return SearchResult(
+                query=query,
+                total_results=search_count,
+                returned_results=len(articles),
+                articles=articles,
+                search_time=0.0,
+                suggestions=[],
+            )
+
+        except Exception as e:
+            logger.error(f"Error searching PubMed: {e}")
+            return SearchResult(
+                query=query,
+                total_results=0,
+                returned_results=0,
+                articles=[],
+                search_time=0.0,
+                suggestions=[],
+            )

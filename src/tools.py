@@ -10,7 +10,7 @@ from typing import Any, Dict, List
 TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     {
         "name": "search_pubmed",
-        "description": "Search PubMed for articles with advanced filtering options",
+        "description": ("Search PubMed for articles with advanced filtering options"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -77,7 +77,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
                 },
                 "language": {
                     "type": "string",
-                    "description": "Language filter (e.g., 'eng', 'fre', 'ger')",
+                    "description": ("Language filter (e.g., 'eng', 'fre', 'ger')"),
                 },
                 "has_abstract": {
                     "type": "boolean",
@@ -85,7 +85,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
                 },
                 "has_full_text": {
                     "type": "boolean",
-                    "description": "Only include articles with full text available",
+                    "description": ("Only include articles with full text available"),
                 },
                 "humans_only": {"type": "boolean", "description": "Only include human studies"},
             },
@@ -94,7 +94,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     },
     {
         "name": "get_article_details",
-        "description": "Get detailed information for specific articles by PMID",
+        "description": ("Get detailed information for specific articles by PMID"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -186,7 +186,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     },
     {
         "name": "search_mesh_terms",
-        "description": "Search and explore MeSH (Medical Subject Headings) terms",
+        "description": ("Search and explore MeSH (Medical Subject Headings) terms"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -230,7 +230,9 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
             "properties": {
                 "category": {
                     "type": "string",
-                    "description": "Medical category (e.g., 'cardiology', 'oncology', 'neurology')",
+                    "description": (
+                        "Medical category (e.g., 'cardiology', 'oncology', " "'neurology')"
+                    ),
                 },
                 "days": {
                     "type": "integer",
@@ -244,7 +246,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     },
     {
         "name": "analyze_research_trends",
-        "description": "Analyze publication trends for a research topic over time",
+        "description": ("Analyze publication trends for a research topic over time"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -316,7 +318,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
     },
     {
         "name": "advanced_search",
-        "description": "Perform complex PubMed searches with multiple criteria",
+        "description": ("Perform complex PubMed searches with multiple criteria"),
         "inputSchema": {
             "type": "object",
             "properties": {
@@ -334,7 +336,7 @@ TOOL_DEFINITIONS: List[Dict[str, Any]] = [
                         },
                         "required": ["term", "field"],
                     },
-                    "description": "Complex search criteria with fields and operators",
+                    "description": ("Complex search criteria with fields and operators"),
                 },
                 "filters": {
                     "type": "object",

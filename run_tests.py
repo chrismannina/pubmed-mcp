@@ -7,7 +7,6 @@ This script provides a convenient way to run tests with different configurations
 
 import subprocess
 import sys
-from pathlib import Path
 
 
 def run_command(cmd: list[str]) -> int:
@@ -17,7 +16,7 @@ def run_command(cmd: list[str]) -> int:
     return result.returncode
 
 
-def main():
+def main() -> None:
     """Main test runner."""
     if len(sys.argv) < 2:
         print("Usage: python run_tests.py [unit|integration|all|coverage]")
@@ -25,29 +24,37 @@ def main():
 
     test_type = sys.argv[1]
 
+    print(f"Running tests with Python {sys.version_info.major}." f"{sys.version_info.minor}...")
+
+    # Run pytest with proper configuration
+    pytest_cmd = [
+        sys.executable,
+        "-m",
+        "pytest",
+        "-v",
+        "--tb=short",
+        "--strict-markers",
+    ]
+
     if test_type == "unit":
-        exit_code = run_command(["python", "-m", "pytest", "tests/", "-m", "unit", "-v"])
+        pytest_cmd.extend(["tests/", "-m", "unit"])
     elif test_type == "integration":
-        exit_code = run_command(["python", "-m", "pytest", "tests/", "-m", "integration", "-v"])
+        pytest_cmd.extend(["tests/", "-m", "integration"])
     elif test_type == "all":
-        exit_code = run_command(["python", "-m", "pytest", "tests/", "-v"])
+        pytest_cmd.extend(["tests/"])
     elif test_type == "coverage":
-        exit_code = run_command(
+        pytest_cmd.extend(
             [
-                "python",
-                "-m",
-                "pytest",
-                "tests/",
                 "--cov=src",
                 "--cov-report=html",
                 "--cov-report=term-missing",
-                "-v",
             ]
         )
     else:
         print(f"Unknown test type: {test_type}")
         sys.exit(1)
 
+    exit_code = run_command(pytest_cmd)
     sys.exit(exit_code)
 
 

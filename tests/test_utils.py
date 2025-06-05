@@ -1,10 +1,8 @@
 """
-Unit tests for the utils module.
+Test cases for utility functions.
 """
 
-import asyncio
 import time
-from unittest.mock import Mock, patch
 
 import pytest
 

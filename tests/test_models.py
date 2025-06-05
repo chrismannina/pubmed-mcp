@@ -1,8 +1,6 @@
 """
-Unit tests for the data models.
+Test cases for Pydantic models.
 """
-
-from datetime import datetime
 
 import pytest
 from pydantic import ValidationError
@@ -163,6 +161,11 @@ class TestArticle:
         if data["authors"]:
             assert isinstance(data["authors"][0], dict)
             assert "last_name" in data["authors"][0]
+
+        # Check that serialization includes expected fields
+        assert "pmid" in data
+        assert "title" in data
+        assert "authors" in data
 
 
 class TestSearchResult:

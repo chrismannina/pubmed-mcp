@@ -2,14 +2,15 @@
 Citation formatting module for different academic citation styles.
 
 This module provides functionality to format PubMed articles into various
-citation formats including BibTeX, APA, MLA, Chicago, Vancouver, EndNote, and RIS.
+citation formats including BibTeX, APA, MLA, Chicago, Vancouver, EndNote,
+and RIS.
 """
 
 import logging
 import re
 from typing import List
 
-from .models import Article, CitationFormat
+from .models import Article, Author, CitationFormat
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +53,7 @@ class CitationFormatter:
     def format_multiple_citations(
         articles: List[Article], format_type: CitationFormat
     ) -> List[str]:
-        """
-        Format multiple articles into citations.
+        """Format multiple articles as citations.
 
         Args:
             articles: List of articles to format
@@ -75,25 +75,38 @@ class CitationFormatter:
         return text.strip()
 
     @staticmethod
-    def _format_authors_apa(authors: List[str]) -> str:
+    def _format_authors_apa(authors: List[Author]) -> str:
         """Format authors for APA style."""
         if not authors:
             return ""
 
         formatted_authors = []
         for author in authors[:20]:  # Limit to first 20 authors
-            parts = author.split()
-            if len(parts) >= 2:
-                # Last, F. M. format
-                last_name = parts[-1]
-                initials = " ".join([f"{name[0]}." for name in parts[:-1]])
-                formatted_authors.append(f"{last_name}, {initials}")
+            if isinstance(author, str):
+                # Handle string authors (legacy format)
+                parts = author.split()
+                if len(parts) >= 2:
+                    # Last, F. M. format
+                    last_name = parts[-1]
+                    initials = " ".join([f"{name[0]}." for name in parts[:-1]])
+                    formatted_authors.append(f"{last_name}, {initials}")
+                else:
+                    formatted_authors.append(author)
             else:
-                formatted_authors.append(author)
+                # Handle Author objects
+                if author.last_name:
+                    author_str = author.last_name
+                    if author.initials:
+                        author_str += f", {author.initials}"
+                    elif author.first_name:
+                        author_str += f", {author.first_name[0]}."
+                    formatted_authors.append(author_str)
+                elif author.first_name:
+                    formatted_authors.append(author.first_name)
 
         if len(authors) > 20:
             formatted_authors.append("... & " + formatted_authors[-1])
-            return ", ".join(formatted_authors[:-2]) + ", " + formatted_authors[-1]
+            return ", ".join(formatted_authors[:-2]) + ", & " + formatted_authors[-1]
         elif len(formatted_authors) > 1:
             return ", ".join(formatted_authors[:-1]) + ", & " + formatted_authors[-1]
         else:
@@ -110,8 +123,8 @@ class CitationFormatter:
             citation_parts.append(authors)
 
         # Year
-        if article.publication_date:
-            year = article.publication_date[:4]
+        if article.pub_date:
+            year = article.pub_date[:4]
             citation_parts.append(f"({year})")
 
         # Title
@@ -123,13 +136,11 @@ class CitationFormatter:
 
         # Journal
         if article.journal:
-            journal_part = f"*{article.journal}*"
-            if article.volume:
-                journal_part += f", *{article.volume}*"
-                if article.issue:
-                    journal_part += f"({article.issue})"
-            if article.pages:
-                journal_part += f", {article.pages}"
+            journal_part = f"*{article.journal.title}*"
+            if article.journal.volume:
+                journal_part += f", *{article.journal.volume}*"
+                if article.journal.issue:
+                    journal_part += f"({article.journal.issue})"
             citation_parts.append(journal_part + ".")
 
         # DOI or PMID
@@ -149,11 +160,20 @@ class CitationFormatter:
         # Authors (Last, First format for first author)
         if article.authors:
             first_author = article.authors[0]
-            parts = first_author.split()
-            if len(parts) >= 2:
-                mla_author = f"{parts[-1]}, {' '.join(parts[:-1])}"
+            if isinstance(first_author, str):
+                parts = first_author.split()
+                if len(parts) >= 2:
+                    mla_author = f"{parts[-1]}, {' '.join(parts[:-1])}"
+                else:
+                    mla_author = first_author
             else:
-                mla_author = first_author
+                # Handle Author object
+                if first_author.last_name and first_author.first_name:
+                    mla_author = f"{first_author.last_name}, {first_author.first_name}"
+                elif first_author.last_name:
+                    mla_author = first_author.last_name
+                else:
+                    mla_author = first_author.first_name or "Unknown Author"
 
             if len(article.authors) > 1:
                 mla_author += ", et al"
@@ -167,20 +187,20 @@ class CitationFormatter:
 
         # Journal
         if article.journal:
-            journal_part = f"*{article.journal}*"
-            if article.volume:
-                journal_part += f", vol. {article.volume}"
-                if article.issue:
-                    journal_part += f", no. {article.issue}"
-            if article.publication_date:
-                year = article.publication_date[:4]
+            journal_part = f"*{article.journal.title}*"
+            if article.journal.volume:
+                journal_part += f", vol. {article.journal.volume}"
+                if article.journal.issue:
+                    journal_part += f", no. {article.journal.issue}"
+            if article.pub_date:
+                year = article.pub_date[:4]
                 journal_part += f", {year}"
-            if article.pages:
-                journal_part += f", pp. {article.pages}"
             citation_parts.append(journal_part + ".")
 
         # Access information
-        if article.pmid:
+        if article.doi:
+            citation_parts.append(f"DOI: {article.doi}.")
+        elif article.pmid:
             pmid_url = f"https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/"
             citation_parts.append(f"Web. {pmid_url}")
 
@@ -194,11 +214,20 @@ class CitationFormatter:
         # Authors
         if article.authors:
             first_author = article.authors[0]
-            parts = first_author.split()
-            if len(parts) >= 2:
-                chicago_author = f"{parts[-1]}, {' '.join(parts[:-1])}"
+            if isinstance(first_author, str):
+                parts = first_author.split()
+                if len(parts) >= 2:
+                    chicago_author = f"{parts[-1]}, {' '.join(parts[:-1])}"
+                else:
+                    chicago_author = first_author
             else:
-                chicago_author = first_author
+                # Handle Author object
+                if first_author.last_name and first_author.first_name:
+                    chicago_author = f"{first_author.last_name}, {first_author.first_name}"
+                elif first_author.last_name:
+                    chicago_author = first_author.last_name
+                else:
+                    chicago_author = first_author.first_name or "Unknown Author"
 
             if len(article.authors) > 1:
                 chicago_author += ", et al"
@@ -210,26 +239,24 @@ class CitationFormatter:
             title = title.rstrip(".")
             citation_parts.append(f'"{title}."')
 
-        # Journal and publication details
+        # Journal
         if article.journal:
-            journal_part = f"*{article.journal}*"
-            if article.volume:
-                journal_part += f" {article.volume}"
-                if article.issue:
-                    journal_part += f", no. {article.issue}"
-            if article.publication_date:
-                year = article.publication_date[:4]
+            journal_part = article.journal.title
+            if article.journal.volume:
+                journal_part += f" {article.journal.volume}"
+                if article.journal.issue:
+                    journal_part += f", no. {article.journal.issue}"
+            if article.pub_date:
+                year = article.pub_date[:4]
                 journal_part += f" ({year})"
-            if article.pages:
-                journal_part += f": {article.pages}"
             citation_parts.append(journal_part + ".")
 
-        # DOI or access info
+        # DOI or PMID
         if article.doi:
             citation_parts.append(f"https://doi.org/{article.doi}.")
         elif article.pmid:
             pmid_url = f"https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/"
-            citation_parts.append(f"Accessed {pmid_url}.")
+            citation_parts.append(pmid_url)
 
         return " ".join(citation_parts)
 
@@ -238,17 +265,28 @@ class CitationFormatter:
         """Format citation in Vancouver style."""
         citation_parts = []
 
-        # Authors (initials come after surname)
+        # Authors (up to 6, then et al.)
         if article.authors:
             vancouver_authors = []
-            for author in article.authors[:6]:  # Vancouver limits to 6 authors
-                parts = author.split()
-                if len(parts) >= 2:
-                    last_name = parts[-1]
-                    initials = "".join([name[0] for name in parts[:-1]])
-                    vancouver_authors.append(f"{last_name} {initials}")
+            for i, author in enumerate(article.authors[:6]):
+                if isinstance(author, str):
+                    parts = author.split()
+                    if len(parts) >= 2:
+                        # Last FM format
+                        last_name = parts[-1]
+                        initials = "".join([name[0] for name in parts[:-1]])
+                        vancouver_authors.append(f"{last_name} {initials}")
+                    else:
+                        vancouver_authors.append(author)
                 else:
-                    vancouver_authors.append(author)
+                    # Handle Author object
+                    if author.last_name:
+                        author_str = author.last_name
+                        if author.initials:
+                            author_str += f" {author.initials.replace('.', '')}"
+                        elif author.first_name:
+                            author_str += f" {author.first_name[0]}"
+                        vancouver_authors.append(author_str)
 
             if len(article.authors) > 6:
                 vancouver_authors.append("et al")
@@ -261,78 +299,99 @@ class CitationFormatter:
             title = title.rstrip(".")
             citation_parts.append(f"{title}.")
 
-        # Journal abbreviation and details
+        # Journal
         if article.journal:
-            journal_part = article.journal  # In Vancouver, use journal abbreviation
-            if article.publication_date:
-                year = article.publication_date[:4]
+            journal_part = article.journal.title
+            if article.pub_date:
+                year = article.pub_date[:4]
                 journal_part += f" {year}"
-            if article.volume:
-                journal_part += f";{article.volume}"
-                if article.issue:
-                    journal_part += f"({article.issue})"
-            if article.pages:
-                journal_part += f":{article.pages}"
+            if article.journal.volume:
+                journal_part += f";{article.journal.volume}"
+                if article.journal.issue:
+                    journal_part += f"({article.journal.issue})"
             citation_parts.append(journal_part + ".")
-
-        # PMID
-        if article.pmid:
-            citation_parts.append(f"PMID: {article.pmid}.")
 
         return " ".join(citation_parts)
 
     @staticmethod
     def _format_bibtex(article: Article) -> str:
         """Format citation in BibTeX format."""
-        # Generate a citation key
+        # Generate citation key
         key_parts = []
         if article.authors:
-            first_author_last = article.authors[0].split()[-1].lower()
-            key_parts.append(first_author_last)
-        if article.publication_date:
-            key_parts.append(article.publication_date[:4])
+            first_author = article.authors[0]
+            if isinstance(first_author, str):
+                key_parts.append(first_author.split()[-1].lower())
+            else:
+                if first_author and first_author.last_name:
+                    key_parts.append(
+                        first_author.last_name.lower() if first_author.last_name else "unknown"
+                    )
+
+        if article.pub_date:
+            key_parts.append(article.pub_date[:4])
+
         if article.title:
-            # Use first word of title
-            first_word = article.title.split()[0].lower()
-            first_word = re.sub(r"[^a-z0-9]", "", first_word)
-            key_parts.append(first_word)
+            # Use first significant word from title
+            title_words = article.title.split()
+            for word in title_words[:3]:
+                if len(word) > 3 and word.lower() not in [
+                    "the",
+                    "and",
+                    "for",
+                    "with",
+                ]:
+                    key_parts.append(word.lower())
+                    break
 
-        citation_key = "".join(key_parts) if key_parts else "unknown"
+        citation_key = "_".join(key_parts) if key_parts else f"article_{article.pmid}"
 
-        bibtex_lines = ["@article{" + citation_key + ","]
+        bibtex_lines = [f"@article{{{citation_key},"]
 
+        # Title
         if article.title:
             title = CitationFormatter._clean_text(article.title)
             bibtex_lines.append(f"  title = {{{title}}},")
 
+        # Authors
         if article.authors:
-            authors_str = " and ".join(article.authors)
-            bibtex_lines.append(f"  author = {{{authors_str}}},")
+            author_list = []
+            for author in article.authors:
+                if isinstance(author, str):
+                    author_list.append(author)
+                else:
+                    if author.last_name and author.first_name:
+                        author_list.append(f"{author.last_name}, {author.first_name}")
 
+            if author_list:
+                authors_str = " and ".join(author_list)
+                bibtex_lines.append(f"  author = {{{authors_str}}},")
+
+        # Journal
         if article.journal:
-            bibtex_lines.append(f"  journal = {{{article.journal}}},")
+            bibtex_lines.append(f"  journal = {{{article.journal.title}}},")
+            if article.journal.volume:
+                bibtex_lines.append(f"  volume = {{{article.journal.volume}}},")
+            if article.journal.issue:
+                bibtex_lines.append(f"  number = {{{article.journal.issue}}},")
 
-        if article.volume:
-            bibtex_lines.append(f"  volume = {{{article.volume}}},")
-
-        if article.issue:
-            bibtex_lines.append(f"  number = {{{article.issue}}},")
-
-        if article.pages:
-            bibtex_lines.append(f"  pages = {{{article.pages}}},")
-
-        if article.publication_date:
-            year = article.publication_date[:4]
+        # Year
+        if article.pub_date:
+            year = article.pub_date[:4]
             bibtex_lines.append(f"  year = {{{year}}},")
 
+        # DOI
         if article.doi:
             bibtex_lines.append(f"  doi = {{{article.doi}}},")
 
+        # PMID
         if article.pmid:
             bibtex_lines.append(f"  pmid = {{{article.pmid}}},")
 
-        bibtex_lines.append("}")
+        # Note: pages field removed since it's not available in Article model
+        # Could be added later if journal provides page information
 
+        bibtex_lines.append("}")
         return "\n".join(bibtex_lines)
 
     @staticmethod
@@ -340,7 +399,7 @@ class CitationFormatter:
         """Format citation in EndNote format."""
         endnote_lines = []
 
-        # Reference type
+        # Reference type (Journal Article)
         endnote_lines.append("%0 Journal Article")
 
         # Title
@@ -349,29 +408,28 @@ class CitationFormatter:
             endnote_lines.append(f"%T {title}")
 
         # Authors
-        if article.authors:
-            for author in article.authors:
+        for author in article.authors:
+            if isinstance(author, str):
                 endnote_lines.append(f"%A {author}")
+            else:
+                if author.last_name and author.first_name:
+                    endnote_lines.append(f"%A {author.last_name}, {author.first_name}")
+                elif author.last_name:
+                    endnote_lines.append(f"%A {author.last_name}")
+                elif author.first_name:
+                    endnote_lines.append(f"%A {author.first_name}")
 
         # Journal
         if article.journal:
-            endnote_lines.append(f"%J {article.journal}")
-
-        # Volume
-        if article.volume:
-            endnote_lines.append(f"%V {article.volume}")
-
-        # Issue
-        if article.issue:
-            endnote_lines.append(f"%N {article.issue}")
-
-        # Pages
-        if article.pages:
-            endnote_lines.append(f"%P {article.pages}")
+            endnote_lines.append(f"%J {article.journal.title}")
+            if article.journal.volume:
+                endnote_lines.append(f"%V {article.journal.volume}")
+            if article.journal.issue:
+                endnote_lines.append(f"%N {article.journal.issue}")
 
         # Date
-        if article.publication_date:
-            endnote_lines.append(f"%D {article.publication_date}")
+        if article.pub_date:
+            endnote_lines.append(f"%D {article.pub_date}")
 
         # DOI
         if article.doi:
@@ -380,6 +438,8 @@ class CitationFormatter:
         # PMID
         if article.pmid:
             endnote_lines.append(f"%M {article.pmid}")
+
+        # Note: pages field removed since it's not available in Article model
 
         return "\n".join(endnote_lines)
 
@@ -397,40 +457,32 @@ class CitationFormatter:
             ris_lines.append(f"TI  - {title}")
 
         # Authors
-        if article.authors:
-            for author in article.authors:
+        for author in article.authors:
+            if isinstance(author, str):
                 ris_lines.append(f"AU  - {author}")
+            else:
+                if author.last_name and author.first_name:
+                    ris_lines.append(f"AU  - {author.last_name}, {author.first_name}")
+                elif author.last_name:
+                    ris_lines.append(f"AU  - {author.last_name}")
+                elif author.first_name:
+                    ris_lines.append(f"AU  - {author.first_name}")
 
         # Journal
         if article.journal:
-            ris_lines.append(f"JO  - {article.journal}")
-
-        # Volume
-        if article.volume:
-            ris_lines.append(f"VL  - {article.volume}")
-
-        # Issue
-        if article.issue:
-            ris_lines.append(f"IS  - {article.issue}")
-
-        # Pages
-        if article.pages:
-            # Split page range if present
-            if "-" in article.pages:
-                start_page, end_page = article.pages.split("-", 1)
-                ris_lines.append(f"SP  - {start_page.strip()}")
-                ris_lines.append(f"EP  - {end_page.strip()}")
-            else:
-                ris_lines.append(f"SP  - {article.pages}")
+            ris_lines.append(f"JO  - {article.journal.title}")
+            if article.journal.volume:
+                ris_lines.append(f"VL  - {article.journal.volume}")
+            if article.journal.issue:
+                ris_lines.append(f"IS  - {article.journal.issue}")
 
         # Date
-        if article.publication_date:
-            # RIS format expects YYYY/MM/DD but we might only have year
-            date_parts = article.publication_date.split("-")
+        if article.pub_date:
+            # Try to format date properly
+            date_parts = article.pub_date.split("-")
             if len(date_parts) >= 1:
                 ris_lines.append(f"PY  - {date_parts[0]}")
-            if len(date_parts) >= 2:
-                ris_lines.append(f"DA  - {article.publication_date}")
+            ris_lines.append(f"DA  - {article.pub_date}")
 
         # DOI
         if article.doi:
@@ -440,7 +492,10 @@ class CitationFormatter:
         if article.pmid:
             ris_lines.append(f"AN  - {article.pmid}")
 
-        # End of record
+        # Note: pages field handling removed since it's not available
+        # in Article model
+
+        # End of reference
         ris_lines.append("ER  - ")
 
         return "\n".join(ris_lines)
