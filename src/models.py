@@ -199,6 +199,7 @@ class Journal(BaseModel):
     volume: Optional[str] = None
     issue: Optional[str] = None
     pub_date: Optional[str] = None
+    pages: Optional[str] = None
 
 
 class MeSHTerm(BaseModel):

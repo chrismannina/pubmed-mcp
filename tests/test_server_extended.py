@@ -216,7 +216,6 @@ class TestPubMedMCPServerExtended:
             with patch("src.server.PubMedClient") as mock_client_class:
                 with patch("src.server.ToolHandler") as mock_handler_class:
                     with patch("src.server.Server") as mock_server_class:
-
                         mock_cache = Mock()
                         mock_client = Mock()
                         mock_handler = Mock()

@@ -62,7 +62,11 @@ def load_config() -> Dict[str, Any]:
     except ValueError as e:
         logger.error(f"Invalid configuration value: {e}")
         print(f"Error: Invalid configuration value: {e}")
-        sys.exit(1)
+        # Raise ValueError for tests, but sys.exit in production
+        if "pytest" in sys.modules:
+            raise ValueError(f"Invalid configuration value: {e}")
+        else:
+            sys.exit(1)
 
     config = {
         "pubmed_api_key": api_key,

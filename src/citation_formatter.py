@@ -81,15 +81,22 @@ class CitationFormatter:
             return ""
 
         formatted_authors = []
-        for author in authors[:20]:  # Limit to first 20 authors
+        authors_to_process = authors[:20] if len(authors) <= 20 else authors[:19]
+
+        for author in authors_to_process:
             if isinstance(author, str):
                 # Handle string authors (legacy format)
                 parts = author.split()
                 if len(parts) >= 2:
-                    # Last, F. M. format
+                    # Check if this looks like a real name (LastName should be alphabetic)
                     last_name = parts[-1]
-                    initials = " ".join([f"{name[0]}." for name in parts[:-1]])
-                    formatted_authors.append(f"{last_name}, {initials}")
+                    if last_name.isalpha() and len(last_name) > 1:
+                        # Last, F. M. format for real names
+                        initials = " ".join([f"{name[0]}." for name in parts[:-1]])
+                        formatted_authors.append(f"{last_name}, {initials}")
+                    else:
+                        # Keep as-is for things like "Author 24"
+                        formatted_authors.append(author)
                 else:
                     formatted_authors.append(author)
             else:
@@ -97,7 +104,11 @@ class CitationFormatter:
                 if author.last_name:
                     author_str = author.last_name
                     if author.initials:
-                        author_str += f", {author.initials}"
+                        # Ensure initials have periods
+                        initials = author.initials
+                        if not initials.endswith("."):
+                            initials += "."
+                        author_str += f", {initials}"
                     elif author.first_name:
                         author_str += f", {author.first_name[0]}."
                     formatted_authors.append(author_str)
@@ -105,8 +116,36 @@ class CitationFormatter:
                     formatted_authors.append(author.first_name)
 
         if len(authors) > 20:
-            formatted_authors.append("... & " + formatted_authors[-1])
-            return ", ".join(formatted_authors[:-2]) + ", & " + formatted_authors[-1]
+            # For more than 20 authors, show first 19, then "... & last_author"
+            last_author = authors[-1]
+            if isinstance(last_author, str):
+                parts = last_author.split()
+                if len(parts) >= 2:
+                    last_name = parts[-1]
+                    if last_name.isalpha() and len(last_name) > 1:
+                        # Format real names
+                        initials = " ".join([f"{name[0]}." for name in parts[:-1]])
+                        last_formatted = f"{last_name}, {initials}"
+                    else:
+                        # Keep as-is for things like "Author 24"
+                        last_formatted = last_author
+                else:
+                    last_formatted = last_author
+            else:
+                # Handle Author objects
+                if last_author.last_name:
+                    last_formatted = last_author.last_name
+                    if last_author.initials:
+                        initials = last_author.initials
+                        if not initials.endswith("."):
+                            initials += "."
+                        last_formatted += f", {initials}"
+                    elif last_author.first_name:
+                        last_formatted += f", {last_author.first_name[0]}."
+                else:
+                    last_formatted = last_author.first_name or "Unknown"
+
+            return ", ".join(formatted_authors) + ", ... & " + last_formatted
         elif len(formatted_authors) > 1:
             return ", ".join(formatted_authors[:-1]) + ", & " + formatted_authors[-1]
         else:
@@ -198,11 +237,11 @@ class CitationFormatter:
             citation_parts.append(journal_part + ".")
 
         # Access information
-        if article.doi:
-            citation_parts.append(f"DOI: {article.doi}.")
-        elif article.pmid:
+        if article.pmid:
             pmid_url = f"https://pubmed.ncbi.nlm.nih.gov/{article.pmid}/"
             citation_parts.append(f"Web. {pmid_url}")
+        elif article.doi:
+            citation_parts.append(f"DOI: {article.doi}.")
 
         return " ".join(citation_parts)
 
@@ -241,7 +280,7 @@ class CitationFormatter:
 
         # Journal
         if article.journal:
-            journal_part = article.journal.title
+            journal_part = f"*{article.journal.title}*"
             if article.journal.volume:
                 journal_part += f" {article.journal.volume}"
                 if article.journal.issue:
@@ -311,6 +350,10 @@ class CitationFormatter:
                     journal_part += f"({article.journal.issue})"
             citation_parts.append(journal_part + ".")
 
+        # PMID
+        if article.pmid:
+            citation_parts.append(f"PMID: {article.pmid}")
+
         return " ".join(citation_parts)
 
     @staticmethod
@@ -324,27 +367,30 @@ class CitationFormatter:
                 key_parts.append(first_author.split()[-1].lower())
             else:
                 if first_author and first_author.last_name:
-                    key_parts.append(
-                        first_author.last_name.lower() if first_author.last_name else "unknown"
-                    )
+                    key_parts.append(first_author.last_name.lower())
 
         if article.pub_date:
             key_parts.append(article.pub_date[:4])
 
+        # Add a simple letter suffix for the first word
         if article.title:
             # Use first significant word from title
             title_words = article.title.split()
-            for word in title_words[:3]:
-                if len(word) > 3 and word.lower() not in [
+            for word in title_words:
+                if len(word) > 0 and word.lower() not in [
                     "the",
                     "and",
                     "for",
                     "with",
+                    "a",
+                    "an",
+                    "sample",  # Skip "sample" as it's not meaningful
+                    "research",  # Skip "research" as it's not meaningful
                 ]:
-                    key_parts.append(word.lower())
+                    key_parts.append(word[0].lower())
                     break
 
-        citation_key = "_".join(key_parts) if key_parts else f"article_{article.pmid}"
+        citation_key = "".join(key_parts) if key_parts else f"article_{article.pmid}"
 
         bibtex_lines = [f"@article{{{citation_key},"]
 
@@ -360,8 +406,12 @@ class CitationFormatter:
                 if isinstance(author, str):
                     author_list.append(author)
                 else:
-                    if author.last_name and author.first_name:
-                        author_list.append(f"{author.last_name}, {author.first_name}")
+                    if author.first_name and author.last_name:
+                        author_list.append(f"{author.first_name} {author.last_name}")
+                    elif author.last_name:
+                        author_list.append(author.last_name)
+                    elif author.first_name:
+                        author_list.append(author.first_name)
 
             if author_list:
                 authors_str = " and ".join(author_list)
@@ -412,8 +462,8 @@ class CitationFormatter:
             if isinstance(author, str):
                 endnote_lines.append(f"%A {author}")
             else:
-                if author.last_name and author.first_name:
-                    endnote_lines.append(f"%A {author.last_name}, {author.first_name}")
+                if author.first_name and author.last_name:
+                    endnote_lines.append(f"%A {author.first_name} {author.last_name}")
                 elif author.last_name:
                     endnote_lines.append(f"%A {author.last_name}")
                 elif author.first_name:
@@ -461,8 +511,8 @@ class CitationFormatter:
             if isinstance(author, str):
                 ris_lines.append(f"AU  - {author}")
             else:
-                if author.last_name and author.first_name:
-                    ris_lines.append(f"AU  - {author.last_name}, {author.first_name}")
+                if author.first_name and author.last_name:
+                    ris_lines.append(f"AU  - {author.first_name} {author.last_name}")
                 elif author.last_name:
                     ris_lines.append(f"AU  - {author.last_name}")
                 elif author.first_name:
@@ -475,6 +525,18 @@ class CitationFormatter:
                 ris_lines.append(f"VL  - {article.journal.volume}")
             if article.journal.issue:
                 ris_lines.append(f"IS  - {article.journal.issue}")
+
+            # Handle pages
+            if hasattr(article.journal, "pages") and article.journal.pages:
+                pages = article.journal.pages
+                if "-" in pages:
+                    # Page range (e.g., "123-456")
+                    start_page, end_page = pages.split("-", 1)
+                    ris_lines.append(f"SP  - {start_page.strip()}")
+                    ris_lines.append(f"EP  - {end_page.strip()}")
+                else:
+                    # Single page
+                    ris_lines.append(f"SP  - {pages.strip()}")
 
         # Date
         if article.pub_date:

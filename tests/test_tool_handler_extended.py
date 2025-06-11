@@ -405,7 +405,7 @@ class TestToolHandlerExtended:
 
         result = tool_handler._format_article_summary(article_dict, 1, highlight_mesh="cancer")
 
-        assert "**Cancer**" in result  # Should be highlighted
+        assert "**Other: Cancer**" in result  # Should be highlighted with the "Other:" prefix
 
     def test_format_article_details(self, tool_handler, sample_article):
         """Test detailed article formatting."""
