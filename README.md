@@ -4,6 +4,10 @@
 
 A comprehensive Model Context Protocol (MCP) server for PubMed literature search and management. This server provides advanced search capabilities, citation formatting, and research analysis tools through the MCP protocol.
 
+<a href="https://glama.ai/mcp/servers/@chrismannina/pubmed-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@chrismannina/pubmed-mcp/badge" alt="PubMed Server MCP server" />
+</a>
+
 ## Features
 
 - **Advanced PubMed Search**: Search with complex filters including date ranges, article types, authors, journals, and MeSH terms
